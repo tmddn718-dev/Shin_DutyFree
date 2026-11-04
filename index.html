@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<!-- Supabase 백엔드 주소. 비워 두면 server.py(같은 주소의 /api) 또는 모의 응답을 쓴다. 예: https://abcd.supabase.co/functions/v1/api -->
+<meta name="signup-api-base" content="">
 <title>신세계면세점 회원가입 UX 개선</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
 <style>
@@ -934,19 +936,23 @@ function showToast(msg){
 }
 // ===== 백엔드 연결 =====
 // server.py 로 열면 실제 API를 쓰고, index.html 만 열면(서버 없음) 기존 모의 응답으로 동작한다.
+// Supabase 로 쓰려면 <meta name="signup-api-base"> 에 Edge Function 주소(https://<프로젝트>.supabase.co/functions/v1/api)를 넣는다.
 const SignupAPI=(()=>{
-  const ready=/^https?:$/.test(location.protocol)
-    ?fetch("/api/health").then(r=>r.ok&&r.json()).then(d=>!!(d&&d.ok)).catch(()=>false)
+  const m=document.querySelector('meta[name="signup-api-base"]');
+  const base=((m&&m.content)||"").trim().replace(/\/$/,"");
+  const url=p=>base?base+p.replace(/^\/api/,""):p; // 화면 코드는 /api/... 경로 그대로 쓴다
+  const ready=base||/^https?:$/.test(location.protocol)
+    ?fetch(url("/api/health")).then(r=>r.ok&&r.json()).then(d=>!!(d&&d.ok)).catch(()=>false)
     :Promise.resolve(false);
   async function call(path,body){
     const opt=body===undefined?{}:{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)};
     let r;
-    try{r=await fetch(path,opt)}catch(e){const err=new Error("서버에 연결할 수 없어요. 잠시 후 다시 시도해 주세요.");err.code="network";throw err}
+    try{r=await fetch(url(path),opt)}catch(e){const err=new Error("서버에 연결할 수 없어요. 잠시 후 다시 시도해 주세요.");err.code="network";throw err}
     const data=await r.json().catch(()=>({}));
     if(!r.ok){const err=new Error(data.message||"잠시 후 다시 시도해 주세요.");err.status=r.status;err.code=data.error;throw err}
     return data;
   }
-  return {ready,call};
+  return {ready,call,base};
 })();
 let signupInfo=null;   // 정보입력 값 (비밀번호 포함, 메모리에만 보관)
 let signupResult=null; // 가입 완료 후 받은 값 (동의 수정용 토큰)
@@ -959,6 +965,7 @@ document.addEventListener("click",async e=>{
   // 간편가입 뒤 돌아와서 통합회원 가입을 고르면 일반 가입으로 되돌린다
   if(socialSignup&&e.target.closest('#v-entry [data-go="verification"]')){socialSignup=null;ShinInfo.setSocial(null)}
   const b=e.target.closest("[data-oauth]");if(!b)return;
+  if(SignupAPI.base){showToast("간편가입은 아직 Supabase로 옮기지 않았어요.");return}
   if(!(await SignupAPI.ready)){showToast("server.py 로 열어야 간편가입을 시험할 수 있어요.");return}
   location.href="/api/auth/"+encodeURIComponent(b.dataset.oauth)+"/start";
 });

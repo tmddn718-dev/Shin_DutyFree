@@ -1,0 +1,7 @@
+# 최소 설정. `supabase init` 으로 만든 config.toml 이 있으면 아래 부분만 합쳐 넣는다.
+project_id = "shin-dutyfree"
+
+# 가입은 로그인 전에 하는 일이라 JWT 없이 호출할 수 있어야 한다.
+# 대신 입력 검증, 중복 방지, CORS 제한은 함수 안에서 한다.
+[functions.api]
+verify_jwt = false

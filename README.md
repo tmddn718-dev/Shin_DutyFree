@@ -45,6 +45,27 @@ Python 3.10 이상만 있으면 되고 설치할 패키지는 없습니다. 데�
 | `POST /api/signup` | 정보입력 값(닉네임 포함) + 추천인(선택) + 약관 동의 저장 → `{userId, nickname, consentToken, memberType, firstJoinedAt}` |
 | `POST /api/consents` `{consentToken, consents}` | 가입 완료 화면의 "동의 내용 수정" 저장 (토큰은 가입 후 30분 유효) |
 
+### Supabase로 실행 (server.py 대신)
+
+같은 API를 Supabase(Postgres + Auth + Edge Function)로 옮겼습니다. 화면 코드는 그대로이고 주소만 바뀝니다.
+
+```bash
+supabase link --project-ref <프로젝트 ref>
+supabase db push                          # supabase/migrations 의 스키마 적용
+psql "$DB_URL" -f supabase/seed.sql       # 시연용 데이터(데모 프로젝트에서만)
+supabase functions deploy api             # supabase/functions/api
+supabase secrets set ALLOWED_ORIGIN=https://배포주소   # 선택. 비우면 모든 주소 허용
+```
+
+그다음 `index.html` 의 `<meta name="signup-api-base" content="">` 에 `https://<프로젝트 ref>.supabase.co/functions/v1/api` 를 넣으면 됩니다. 비워 두면 예전처럼 `server.py` 또는 모의 응답으로 동작합니다.
+
+- **비밀번호:** Supabase Auth 가 해시해 보관합니다. 테이블에는 비밀번호가 없고 `members.auth_id` 로 연결됩니다.
+- **접근 제한:** 모든 테이블은 RLS 를 켜고 정책을 만들지 않았습니다. 브라우저는 테이블에 직접 접근하지 못하고 Edge Function(service role)만 읽고 씁니다. `SUPABASE_SERVICE_ROLE_KEY` 는 화면 코드에 넣지 않습니다.
+- **복귀/신규 판단:** `email_status()` SQL 함수 한 곳에서 합니다. 이메일 확인 API 와 가입 처리가 같은 함수를 씁니다.
+- **가입 처리:** `create_member()` 가 회원과 동의를 한 트랜잭션으로 저장합니다. 저장이 실패하면 방금 만든 Auth 계정도 지웁니다.
+- **아직 옮기지 않은 것:** 간편가입(OAuth)입니다. Supabase 에서는 버튼이 안내 문구만 보여 줍니다. 필요하면 Supabase Auth 의 카카오 로그인으로 따로 이어야 합니다.
+- **검증:** `node --test supabase/functions/api/rules.test.ts` (입력 규칙 테스트, Node 22.6+). SQL 과 Edge Function 은 이 환경에 Postgres/Deno 가 없어 실행해 보지 못했습니다. 배포 후 `GET .../health` 부터 확인하세요.
+
 ### 간편가입 (OAuth, 가입만)
 
 카카오 버튼을 누르면 OAuth 2.0 인가 코드 방식으로 제공자 계정을 받아 오고, 이어서 본인인증 → 정보 입력 → 약관 동의를 거쳐 가입합니다. **지금은 가입만** 다루고 로그인·세션은 없습니다.
