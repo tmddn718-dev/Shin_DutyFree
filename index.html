@@ -1,1819 +1,610 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<!-- Supabase 백엔드 주소. 비워 두면 server.py(같은 주소의 /api) 또는 모의 응답을 쓴다. 예: https://abcd.supabase.co/functions/v1/api -->
+<meta name="theme-color" content="#F5F7FC">
+<!-- 백엔드 주소. Supabase Edge Function 주소를 넣는다. 비워 두면 서버 없이 모의 응답으로 동작한다. -->
 <meta name="signup-api-base" content="https://wopngmreeawvmxaceswq.supabase.co/functions/v1/api">
-<title>신세계면세점 회원가입 UX 개선</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<title>신세계면세점 회원가입</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <style>
-/* 화면별 CSS는 클래스로 스코프를 나눠 서로 충돌하지 않게 했다.
-   .ev = 가입 방식·본인 인증 / #v-info = 정보입력(si- 접두사) / .cs = 약관 동의·완료 */
-
-  /* ===== 디자인 토큰 (gs-shop.md 기준) ===== */
-  :root {
-    --si-primary: #0F78FF;
-    --si-primary-light: #ECF4FE;
-    --si-positive: #12891D;
-    --si-negative: #ED1414;
-    --si-content-1: #191923;
-    --si-content-2: #424252;
-    --si-content-3: #72728A;
-    --si-content-4: #9595B2;
-    --si-content-disabled: #BABAD4;
-    --si-bg: #FFFFFF;
-    --si-bg-2: #F9FAFC;
-    --si-bg-3: #F5F6FA;
-    --si-border-1: #D2D4E5;
-    --si-border-2: #EAECF5;
-    --si-border-focus: #191923;
-    --si-radius: 8px;
-    --si-radius-l: 12px;
-    --si-field-h: 48px;
-    --si-ease: cubic-bezier(0.68, 0, 0.28, 1);
-    --si-font: "Pretendard Variable", "Pretendard", -apple-system, BlinkMacSystemFont, "Roboto", "Segoe UI", "Malgun Gothic", sans-serif;
-  }
-
-  * { box-sizing: border-box; }
-  [hidden] { display: none !important; }
-  #v-info { margin: 0; background: #F5F6FA; }
-  body {
-    font-family: var(--si-font);
-    color: var(--si-content-1);
-    background: var(--si-bg-2);
-    -webkit-font-smoothing: antialiased;
-    letter-spacing: -0.01em;
-  }
-  button, input, select, textarea { font: inherit; color: inherit; letter-spacing: inherit; }
-
-  /* 다른 화면과 합칠 때 겹치지 않도록 모든 클래스는 si- 접두사 사용 */
-  .si-app {
-    max-width: 480px;
-    min-height: 100vh;
-    margin: 0 auto;
-    background: var(--si-bg);
-    position: relative;
-  }
-
-  /* ----- 헤더 ----- */
-  .si-header {
-    position: sticky; top: 0; z-index: 10;
-    min-height: 56px;
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 0 16px;
-    background: var(--si-bg);
-    border-bottom: 1px solid var(--si-border-2);
-  }
-  .si-icon-btn {
-    width: 40px; height: 40px;
-    display: inline-flex; align-items: center; justify-content: center;
-    background: none; border: 0; border-radius: var(--si-radius);
-    cursor: pointer;
-  }
-  .si-icon-btn:hover { background: rgba(149,149,178,.1); }
-  .si-header-title { font-size: 17px; font-weight: 700; }
-
-  /* ----- 진행 단계 ----- */
-  .si-steps { display: flex; gap: 6px; padding: 20px 20px 0; }
-  .si-steps span {
-    flex: 1; height: 4px; border-radius: 2px; background: var(--si-border-2);
-  }
-  .si-steps span.is-done { background: var(--si-primary); }
-  .si-step-label { padding: 8px 20px 0; font-size: 13px; color: var(--si-content-3); }
-  .si-step-label b { color: var(--si-primary); font-weight: 600; }
-
-  /* ----- 본문 ----- */
-  .si-main { padding: 20px 20px 120px; }
-  .si-title { margin: 0 0 6px; font-size: 24px; font-weight: 700; line-height: 1.3; }
-  .si-desc { margin: 0 0 28px; font-size: 14px; line-height: 1.5; color: var(--si-content-3); }
-  .si-req { color: var(--si-negative); }
-  .si-opt { font-weight: 400; color: var(--si-content-4); }
-
-  .si-field { margin-bottom: 24px; }
-  .si-label {
-    display: block; margin-bottom: 8px;
-    font-size: 14px; font-weight: 600; color: var(--si-content-2);
-  }
-  /* 글꼴·글자 크기가 바뀌어도 잘리지 않게: 높이는 최소값만 두고, 자리가 모자라면 버튼이 아래 줄로 내려간다 */
-  .si-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-  .si-row > .si-input-wrap { flex: 1 1 12em; min-width: 0; }
-  .si-field[data-field="email"] .si-row > .si-input-wrap { flex-basis: 6em; }
-
-  .si-input-wrap { position: relative; }
-  .si-input, .si-select {
-    width: 100%;
-    min-height: var(--si-field-h);
-    padding: 8px 16px;
-    font-size: 15px;
-    background: var(--si-bg);
-    border: 1px solid var(--si-border-1);
-    border-radius: var(--si-radius);
-    outline: none;
-    transition: border-color .2s ease-in-out, box-shadow .2s ease-in-out;
-    -webkit-appearance: none; appearance: none;
-  }
-  .si-input::placeholder { color: var(--si-content-4); }
-  .si-input:focus, .si-select:focus { border-color: var(--si-border-focus); }
-  .si-input[readonly] {
-    background: var(--si-bg-3); border-color: var(--si-bg-3); color: var(--si-content-2);
-  }
-  .si-input.has-end { padding-right: 48px; }
-  .si-textarea { height: auto; min-height: var(--si-field-h); padding: 13px 16px; line-height: 1.4; resize: none; overflow: hidden; display: block; }
-  .si-field.is-error .si-input:not([readonly]),
-  .si-field.is-error .si-select { border-color: var(--si-negative); }
-
-  .si-select {
-    padding-right: 40px; cursor: pointer;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' fill='none' stroke='%23424252' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 8l5 5 5-5'/%3E%3C/svg%3E");
-    background-repeat: no-repeat; background-position: right 12px center;
-  }
-  .si-select.is-placeholder { color: var(--si-content-4); }
-
-  .si-end-btn {
-    position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
-    width: 40px; height: 40px;
-    display: inline-flex; align-items: center; justify-content: center;
-    background: none; border: 0; border-radius: var(--si-radius);
-    color: var(--si-content-4); cursor: pointer;
-  }
-  .si-end-btn:hover { color: var(--si-content-2); }
-
-  .si-btn {
-    min-height: var(--si-field-h); padding: 8px 16px;
-    flex-shrink: 0;
-    font-size: 14px; font-weight: 600; white-space: nowrap;
-    border-radius: var(--si-radius); cursor: pointer;
-    transition: all .2s ease-in-out;
-  }
-  .si-btn-outline { background: var(--si-bg); border: 1px solid var(--si-border-1); color: var(--si-content-1); }
-  .si-btn-outline:hover { background: var(--si-bg-3); }
-  .si-btn-outline:disabled { color: var(--si-content-disabled); cursor: default; background: var(--si-bg); }
-  .si-btn-primary { background: var(--si-primary); border: 0; color: #fff; }
-  .si-btn-primary:disabled { background: var(--si-border-2); color: var(--si-content-disabled); cursor: default; }
-
-  .si-at { flex-shrink: 0; font-size: 15px; color: var(--si-content-3); }
-
-  /* ----- 안내 / 오류 문구 ----- */
-  .si-msg { margin: 8px 0 0; font-size: 13px; line-height: 1.4; display: flex; gap: 4px; align-items: flex-start; }
-  .si-msg[hidden] { display: none; }
-  .si-social { margin: 0 0 24px; padding: 12px 16px; border-radius: var(--si-radius); background: #E6F2FF; color: var(--si-content-2); font-size: 14px; line-height: 1.5; }
-  .si-social[hidden], .si-field[hidden] { display: none; }
-  .si-msg.is-error { color: var(--si-negative); }
-  .si-msg.is-success { color: var(--si-positive); }
-  .si-msg.is-info { color: var(--si-content-3); }
-  .si-msg svg { flex-shrink: 0; margin-top: .1em; }
-
-  /* 이메일 확인: 메시지는 입력창 바로 아래, 확인 버튼은 그 오른쪽 (상태가 바뀌어도 높이 고정) */
-  .si-email-foot { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: flex-start; margin-top: 8px; min-height: 40px; }
-  .si-email-foot .si-msg { margin: 0; flex: 1 1 14em; min-width: 0; padding-top: 2px; }
-  #siEmailCheck { height: 40px; padding: 0 14px; font-size: 13px; }
-  #siEmailCheck:disabled.is-done { color: var(--si-positive); border-color: var(--si-border-1); }
-  .si-btn.is-loading::before { content: ""; display: inline-block; width: 12px; height: 12px; margin-right: 6px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; vertical-align: -2px; animation: si-spin .7s linear infinite; }
-  @keyframes si-spin { to { transform: rotate(360deg); } }
-  @media (prefers-reduced-motion: reduce) { .si-btn.is-loading::before { animation-duration: 2s; } }
-
-  /* 비밀번호 규칙: 입력창 밖으로 꺼낸 체크리스트 */
-  .si-rules { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-wrap: nowrap; gap: 10px; white-space: nowrap; }
-  .si-rules li {
-    display: flex; align-items: center; gap: 2px;
-    font-size: 12px; color: var(--si-content-4);
-    transition: color .2s ease-in-out;
-  }
-  .si-rules li svg { width: 12px; height: 12px; }
-  .si-rules li.is-ok { color: var(--si-positive); }
-  .si-rules li.is-bad { color: var(--si-negative); }
-
-  .si-addr-extra { display: grid; gap: 8px; margin-top: 8px; }
-  .si-addr-extra[hidden] { display: none; }
-
-  /* ----- 하단 고정 버튼 ----- */
-  .si-bottom {
-    position: fixed; left: 50%; bottom: 0; transform: translateX(-50%);
-    width: 100%; max-width: 480px;
-    padding: 12px 20px calc(12px + env(safe-area-inset-bottom));
-    background: linear-gradient(to top, #fff 75%, rgba(255,255,255,0));
-    z-index: 20;
-  }
-  .si-bottom .si-btn { width: 100%; font-size: 16px; }
-
-  /* ----- 주소 검색 레이어 ----- */
-  .si-layer {
-    position: fixed; inset: 0; z-index: 100;
-    display: flex; align-items: flex-end; justify-content: center;
-    background: rgba(25,25,35,.45);
-  }
-  .si-layer[hidden] { display: none; }
-  .si-sheet {
-    width: 100%; max-width: 480px; height: 88vh;
-    background: #fff; border-radius: 16px 16px 0 0;
-    display: flex; flex-direction: column; overflow: hidden;
-    animation: si-up .4s cubic-bezier(0.23, 1, 0.5, 1);
-  }
-  @keyframes si-up { from { transform: translateY(100%); } to { transform: none; } }
-  .si-sheet-head {
-    height: 56px; flex-shrink: 0;
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 0 8px 0 20px; border-bottom: 1px solid var(--si-border-2);
-    font-size: 17px; font-weight: 700;
-  }
-  .si-sheet-body { flex: 1; position: relative; }
-  .si-sheet-body > div { width: 100%; height: 100%; }
-  .si-fallback { padding: 24px 20px; font-size: 14px; line-height: 1.6; color: var(--si-content-2); }
-
-  /* ----- 토스트 ----- */
-  .si-toast {
-    position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%);
-    max-width: 440px; width: calc(100% - 40px);
-    padding: 14px 16px; border-radius: var(--si-radius);
-    background: rgba(25,25,35,.92); color: #fff; font-size: 14px; text-align: center;
-    z-index: 200; opacity: 0; pointer-events: none; transition: opacity .2s ease-in-out;
-  }
-  .si-toast.is-show { opacity: 1; }
-
-  .si-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-
-.ev-toast{position:fixed;left:50%;bottom:32px;transform:translate(-50%,16px);width:calc(100% - 40px);max-width:440px;padding:14px 16px;background:#191923;color:#fff;border-radius:12px;font-size:14px;opacity:0;pointer-events:none;transition:all .3s cubic-bezier(.23,1,.5,1);z-index:300;font-family:"Pretendard Variable","Pretendard",sans-serif}
-.ev-toast.show{opacity:1;transform:translate(-50%,0)}
-.ev {
-& {
-  --primary: #0F78FF;
-  --primary-dark: #0A61EB;
-  --primary-light: #ECF4FE;
-  --text: #191923;
-  --text-2: #424252;
-  --text-3: #72728A;
-  --disabled: #BABAD4;
-  --bg: #FFFFFF;
-  --bg-2: #F9FAFC;
-  --bg-3: #F5F6FA;
-  --border: #D2D4E5;
-  --border-2: #EAECF5;
-  --info-bg: #E6F2FF;
-  --notice-bg: #FFF5ED;
-  --notice: #F95401;
-  --radius-m: 8px;
-  --radius-l: 12px;
-  --radius-xl: 16px;
-  --ease: cubic-bezier(0.68, 0, 0.28, 1);
-}
-* { box-sizing: border-box; }
-& {
-  margin: 0; background: var(--bg-3); color: var(--text);
-  font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Malgun Gothic", sans-serif;
-  font-size: 16px; line-height: 1.5; letter-spacing: -0.025em; word-break: keep-all;
-}
-h1, h2, h3, p { margin: 0; }
-button, input, a { font: inherit; letter-spacing: inherit; }
-a { color: inherit; text-decoration: none; }
-button { cursor: pointer; }
-:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
-
-/* 모바일 앱 프레임 (데스크톱에서도 폰 폭으로 보이게) */
-.screen {
-  max-width: 480px; min-height: 100vh; margin: 0 auto; background: var(--bg);
-  display: flex; flex-direction: column;
-}
-.app-bar {
-  display: grid; grid-template-columns: 48px 1fr 48px; align-items: center;
-  height: 56px; padding: 0 4px;
-}
-.app-bar h1 { font-size: 18px; font-weight: 700; line-height: 1.25; text-align: center; }
-.icon-btn {
-  display: grid; place-items: center; width: 48px; height: 48px;
-  border: 0; background: none; border-radius: 50%; color: var(--text);
-}
-.icon-btn svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-
-/* 진행 상태: 얇은 바 + 헤더의 단계 표기 */
-.bar { height: 4px; margin: 0 20px; border-radius: 2px; background: var(--border-2); overflow: hidden; }
-.bar i { display: block; height: 100%; background: var(--primary); border-radius: 2px; }
-.step { padding-right: 16px; text-align: right; font-size: 14px; font-weight: 600; color: var(--primary-dark); }
-.intro { padding: 32px 20px 24px; }
-.intro h2 { font-size: 26px; font-weight: 700; line-height: 1.25; }
-.intro p { margin-top: 8px; font-size: 14px; color: var(--text-3); }
-.intro .eyebrow { margin: 0 0 8px; font-size: 14px; font-weight: 600; color: var(--primary-dark); }
-.content { flex: 1; padding: 0 20px 24px; }
-.btn-primary { width: 100%; height: 52px; border: 0; border-radius: var(--radius-m); background: var(--primary-dark); color: #fff; font-size: 16px; font-weight: 600; transition: all .2s ease-in-out; }
-.btn-primary:disabled { background: var(--border-2); color: var(--text-3); cursor: not-allowed; }
-.proto { padding: 0 20px 20px; font-size: 12px; color: var(--text-3); text-align: center; }
-
-@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
-.content { display: grid; gap: 12px; align-content: start; }
-.btn { display: grid; place-items: center; width: 100%; height: 52px; border: 0; border-radius: var(--radius-m); font-size: 16px; font-weight: 600; transition: all .2s ease-in-out; }
-.btn-primary { background: var(--primary-dark); color: #fff; }
-.btn-outline { background: var(--bg); color: var(--text); border: 1px solid var(--border); }
-.btn:active { filter: brightness(.94); }
-.caption { margin: -4px 0 4px; font-size: 13px; color: var(--text-3); text-align: center; }
-.divider { display: flex; align-items: center; gap: 12px; margin: 20px 0 4px; font-size: 13px; color: var(--text-3); }
-.divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--border-2); }
-.sns { display: flex; justify-content: center; gap: 16px; margin: 8px 0 4px; }
-.sns-btn { display: grid; place-items: center; width: 64px; height: 64px; border: 0; border-radius: 50%; font-size: 15px; font-weight: 700; color: #fff; transition: all .2s ease-in-out; }
-.sns-btn:active { filter: brightness(.92); }
-.sns-btn.kakao { background: #FEE500; }
-.sns-btn.kakao svg { width: 30px; height: 30px; fill: #191923; }
-.sns-btn.appcard { background: var(--primary-dark); }
-.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
-.content { display: flex; flex-direction: column; }
-fieldset { margin: 0; padding: 0; border: 0; min-width: 0; border-top: 1px solid var(--border-2); }
-.row { position: relative; display: flex; align-items: center; gap: 12px; min-height: 72px; border-bottom: 1px solid var(--border-2); cursor: pointer; }
-.row input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
-.txt { flex: 1; display: grid; gap: 2px; }
-.txt b { font-size: 16px; font-weight: 600; line-height: 1.25; }
-.txt small { font-size: 13px; color: var(--text-3); }
-/* 선택 표시: 색 + 채워진 라디오 + 굵은 제목 */
-.radio { width: 24px; height: 24px; border: 2px solid var(--border); border-radius: 50%; display: grid; place-items: center; transition: all .2s ease-in-out; }
-.row:has(input:checked) .radio { border-color: var(--primary-dark); background: var(--primary-dark); }
-.row:has(input:checked) .radio::after { content: ""; width: 6px; height: 11px; margin-top: -2px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
-.row:has(input:checked) .txt b { color: var(--primary-dark); }
-.row:has(input:focus-visible) { outline: 3px solid var(--primary); outline-offset: -3px; }
-.content .caption { margin-top: 12px; font-size: 13px; color: var(--text-3); }
-.bottom { margin-top: auto; padding-top: 24px; }
-.proto { margin-top: 12px; font-size: 12px; color: var(--text-3); text-align: center; }
-
-}
-.cs-old {
-
-/* 토큰: gs-shop design.md (primary=계정·인증 파랑, content/bg/border 스케일, 4px spacing, radius m/l/xl) */
-&{
-  --primary:#0F78FF; --primary-dark:#0A61EB; --primary-light:#ECF4FE;
-  --info-light:#E6F2FF;
-  --negative:#C00002; --negative-light:#FCF3F4;
-  --positive:#12891D; --positive-light:#E8F7E9;
-  --c1:#191923; --c2:#424252; --c3:#72728A; --c4:#9595B2; --cdis:#BABAD4;
-  --bg:#FFFFFF; --bg2:#F9FAFC; --bg3:#F5F6FA;
-  --line:#D2D4E5; --line2:#EAECF5;
-  --r-m:8px; --r-l:12px; --r-xl:16px;
-  --ease:cubic-bezier(.68,0,.28,1);
+/* Soft Clarity — 부드러운 면, 분명한 위계. 컬러는 신세계면세점(gs-shop) 토큰을 그대로 쓴다. */
+:root{
+  --blue:#0F78FF; --blue-press:#0A61EB; --blue-soft:#EAF3FF; --blue-line:#BBD8FF;
+  --bg:#F5F6FA; --card:#fff; --text:#191923; --sub:#72728A; --line:#E6E8F0; --fill:#EEF0F6;
+  --ok:#12891D; --ok-soft:#E9F6EA; --err:#C00002; --err-soft:#FDECEC;
+  --r-card:20px; --r-btn:12px; --r-input:12px;
+  --shadow:0 1px 2px rgba(25,25,35,.04);
 }
 *{box-sizing:border-box;margin:0}
-&{font-family:"Pretendard",-apple-system,"Malgun Gothic",sans-serif;color:var(--c1);background:var(--bg3);font-size:14px;line-height:1.5;letter-spacing:-.01em}
-button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
-.app{max-width:480px;min-height:100vh;margin:0 auto;background:var(--bg);position:relative;padding-bottom:104px}
-header{display:flex;align-items:center;justify-content:space-between;height:56px;padding:0 16px;border-bottom:1px solid var(--line2);position:sticky;top:0;background:var(--bg);z-index:5}
-header b{font-size:16px;font-weight:700}
-.steps{display:flex;gap:6px;padding:16px 16px 0}
-.steps i{flex:1;height:4px;border-radius:2px;background:var(--line2)}
-.steps i.on{background:var(--primary)}
-h1{font-size:22px;line-height:1.25;font-weight:700;padding:16px 16px 4px}
-.sub{padding:0 16px 16px;color:var(--c3);font-size:13px}
-section{padding:0 16px;margin-top:20px}
+html{-webkit-text-size-adjust:100%}
+body{font-family:Pretendard,-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;color:var(--text);
+  background:linear-gradient(180deg,#F7FAFF 0%,var(--bg) 320px);background-attachment:fixed;
+  font-size:16px;line-height:1.5;letter-spacing:-.01em}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none}
+[hidden]{display:none!important}
+:focus-visible{outline:3px solid var(--blue-line);outline-offset:2px}
 
-/* 전체 동의 */
-.all{display:flex;align-items:center;gap:12px;width:100%;padding:16px;border-radius:var(--r-xl);background:var(--primary-light);border:1.5px solid var(--primary);text-align:left}
-.all strong{font-size:16px;font-weight:700}
-.all small{display:block;color:var(--c3);font-size:12px}
+.app{max-width:430px;margin:0 auto;min-height:100dvh;background:rgba(255,255,255,.55);display:flex;flex-direction:column}
+@media(min-width:480px){.app{border-left:1px solid var(--line);border-right:1px solid var(--line)}}
+.screen{display:flex;flex-direction:column;flex:1}
+.screen[hidden]{display:none!important}
+main{flex:1;padding:8px 20px 24px}
 
-/* 체크박스 */
-.ck{flex:none;width:24px;height:24px;border-radius:50%;border:1.5px solid var(--cdis);background:#fff;display:grid;place-items:center;transition:all .2s linear}
-.ck svg{width:14px;height:14px;stroke:#fff;fill:none;stroke-width:3;opacity:0}
-.on>.ck,.ck.on{background:var(--primary);border-color:var(--primary)}
-.on>.ck svg,.ck.on svg{opacity:1}
+/* 상단 바 / 진행 */
+.top{display:flex;align-items:center;gap:4px;height:56px;padding:0 8px}
+.back{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-size:22px;color:var(--text)}
+.back:active{background:var(--fill)}
+.steps{display:flex;gap:6px;margin-left:auto;margin-right:12px;align-items:center}
+.steps i{height:6px;width:28px;border-radius:3px;background:var(--line)}
+.steps i.on{background:var(--blue)}
+.steps span{font-size:13px;color:var(--sub);margin-left:6px}
+.brand{font-weight:700;font-size:17px;padding:0 12px}
 
-/* 그룹 헤더 */
-.gh{display:flex;align-items:center;gap:8px;margin-bottom:8px}
-.gh h2{font-size:16px;font-weight:700}
-.gh .cnt{margin-left:auto;font-size:12px;color:var(--c3)}
-.tag{display:inline-block;font-size:11px;font-weight:600;border-radius:4px;padding:1px 6px;line-height:1.5}
-.tag.req{background:var(--primary);color:#fff}
-.tag.opt{background:var(--bg3);color:var(--c3);border:1px solid var(--line)}
+h1{font-size:24px;line-height:1.35;font-weight:700;letter-spacing:-.02em}
+.lead{color:var(--sub);font-size:15px;margin-top:8px}
+.head{padding:8px 0 24px}
 
-/* 필수: 파랑 좌측 바 + 연한 파랑 면 */
-.req-box{border:1px solid var(--primary);border-left-width:4px;border-radius:var(--r-l);background:var(--bg);overflow:hidden}
-.req-box .row{border-bottom:1px solid var(--info-light)}
-.req-box .row:last-child{border-bottom:0}
-/* 선택: 회색 면, 얇은 보더 */
-.opt-box{border:1px solid var(--line2);border-radius:var(--r-l);background:var(--bg2);overflow:hidden}
-.opt-box>.row,.opt-box>.blk{border-bottom:1px solid var(--line2)}
-.opt-box>:last-child{border-bottom:0}
+/* 카드 · 버튼 */
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r-card);padding:20px;box-shadow:var(--shadow)}
+.btn{width:100%;min-height:52px;border-radius:var(--r-btn);font-weight:600;font-size:16px;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-primary{background:var(--blue);color:#fff}
+.btn-primary:active{background:var(--blue-press)}
+.btn-primary:disabled{background:var(--fill);color:#A0A3B5;cursor:not-allowed}
+.btn-secondary{background:var(--blue-soft);color:var(--blue-press)}
+.btn-ghost{color:var(--sub);min-height:44px;font-weight:500}
+.caption{font-size:13px;color:var(--sub);text-align:center;margin-top:12px}
 
-.row{display:flex;align-items:center;gap:12px;padding:14px 12px;width:100%;text-align:left}
-.row .t{flex:1;font-size:14px}
-.row .t small{display:block;color:var(--c3);font-size:12px}
-.view{color:var(--c4);font-size:12px;text-decoration:underline;padding:4px}
-.req-box .row.on{background:var(--primary-light)}
+/* 하단 고정 CTA — 항상 보이게 */
+.foot{position:sticky;bottom:0;padding:12px 20px calc(14px + env(safe-area-inset-bottom));
+  background:rgba(247,248,252,.96);border-top:1px solid var(--line);backdrop-filter:blur(8px)}
+.foot .hint{font-size:13px;color:var(--sub);text-align:center;margin-bottom:10px;min-height:20px}
 
-/* 스위치 (우측에서 바로 동의) */
-.sw{flex:none;width:44px;height:26px;border-radius:13px;background:var(--cdis);position:relative;transition:background .2s linear}
-.sw::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:transform .25s var(--ease)}
-.sw.on{background:var(--primary)}
-.sw.on::after{transform:translateX(18px)}
+/* 1. 가입 방식 */
+.hero{padding:16px 0 20px}
+.perks{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding:0 20px;margin:0 -20px;padding:0 20px 4px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.perks::-webkit-scrollbar{display:none}
+.perk{flex:0 0 78%;scroll-snap-align:start;scroll-snap-stop:always;background:var(--card);border:1px solid var(--line);border-radius:var(--r-card);padding:18px 20px;box-shadow:var(--shadow)}
+.perk b{display:block;font-size:13px;color:var(--blue-press);font-weight:600;margin-bottom:4px}
+.perk strong{display:block;font-size:18px;line-height:1.4}
+.perk p{font-size:14px;color:var(--sub);margin-top:4px}
+.cta-group{margin-top:28px}
+.divider{display:flex;align-items:center;gap:12px;margin:28px 0 16px;color:var(--sub);font-size:13px}
+.divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--line)}
+.sns{display:flex;justify-content:center;gap:28px}
+.sns button{display:flex;flex-direction:column;align-items:center;gap:8px;font-size:13px;color:var(--sub);min-width:64px}
+.sns i{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-weight:700;font-size:15px;border:1px solid var(--line);background:#fff}
+.sns .kakao i{background:#FEE500;border-color:#FEE500;color:#191600}
+.sns .appcard i{color:var(--blue-press)}
+.login{margin-top:24px;text-align:center;font-size:14px;color:var(--sub)}
+.login button{color:var(--blue-press);font-weight:600;text-decoration:underline;text-underline-offset:3px;min-height:44px;padding:0 4px}
 
-/* 통합 ID 서비스 */
-.svc-head{display:flex;align-items:center;gap:12px;padding:14px 12px}
-.svc-head .t{flex:1}
-.svc-head .t b{font-weight:600}
-.svc-head .t small{display:block;color:var(--c3);font-size:12px}
-.chips{display:flex;flex-wrap:wrap;gap:6px;padding:0 12px 12px}
-.chip{font-size:12px;border-radius:999px;padding:3px 10px;background:#fff;border:1px solid var(--line);color:var(--c3)}
-.chip.on{background:var(--primary-light);border-color:var(--primary);color:var(--primary-dark);font-weight:600}
-.toggle-more{display:block;width:100%;padding:10px;color:var(--c3);font-size:13px;border-top:1px solid var(--line2);background:#fff}
-/* 기존 통합 ID 화면의 브랜드 컬러 바 유지, 높이는 축소 + 우측 스위치 */
-.brands{display:grid;gap:6px;padding:0 12px 12px}
-.brand{display:flex;align-items:center;gap:12px;height:44px;padding:0 12px;border-radius:var(--r-m);background:var(--bc);color:#fff;font-weight:600;font-size:14px}
-.brand .lg{flex:none;width:76px;font-size:11px;font-weight:700;opacity:.85;letter-spacing:-.02em;white-space:nowrap;overflow:hidden}
-.brand .nm{flex:1}
-.bck{display:flex;padding:4px}
-.brand .ck{background:transparent;border-color:rgba(255,255,255,.8)}
-.brand .on>.ck{background:#fff;border-color:#fff}
-.brand .on>.ck svg{stroke:var(--bc)}
+/* 2. 본인 인증 */
+.opts{display:grid;gap:12px}
+.opt{display:flex;align-items:center;gap:14px;background:var(--card);border:1.5px solid var(--line);border-radius:var(--r-card);padding:18px 20px;cursor:pointer;min-height:76px}
+.opt:has(input:checked){border-color:var(--blue);background:var(--blue-soft)}
+.opt input{width:22px;height:22px;accent-color:var(--blue);flex:none}
+.opt strong{display:block;font-size:16px}
+.opt small{display:block;font-size:13px;color:var(--sub)}
+.note{margin-top:16px;font-size:13px;color:var(--sub);background:var(--fill);border-radius:12px;padding:12px 14px}
 
-/* 마케팅: 한 곳에서 표로 */
-.mk-head{display:flex;align-items:center;gap:12px;padding:14px 12px}
-.mk-head .t{flex:1;font-weight:600}
-.mk-head .t small{display:block;font-weight:400;color:var(--c3);font-size:12px}
-.reward{margin:0 12px 12px;padding:8px 12px;border-radius:var(--r-m);background:#FFF5ED;color:#F95401;font-size:12px;font-weight:600}
-.matrix{background:#fff;border-top:1px solid var(--line2)}
-.matrix .mr{display:grid;grid-template-columns:1fr 84px 84px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line2)}
-.matrix .mr:last-child{border-bottom:0}
-.matrix .mr.h{background:var(--bg3);font-size:12px;color:var(--c3);font-weight:600;padding:8px 12px}
-.matrix .mr.h span:not(:first-child){text-align:center}
-.matrix .cell{display:flex;justify-content:center}
-.summary{padding:12px;background:#fff;border-top:1px solid var(--line2);font-size:13px}
-.summary div{display:flex;gap:8px;align-items:baseline;padding:2px 0}
-.badge{flex:none;font-size:11px;font-weight:600;border-radius:4px;padding:1px 8px}
-.badge.y{background:var(--positive-light);color:var(--positive)}
-.badge.n{background:var(--bg3);color:var(--c3)}
-.note{margin:8px 4px 0;font-size:12px;color:var(--c3)}
+/* 3. 정보 입력 */
+.group{display:grid;gap:20px}
+.field label.l{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:600;margin-bottom:8px}
+.tag{font-size:12px;font-weight:600;border-radius:6px;padding:1px 6px;background:var(--fill);color:var(--sub)}
+.tag.req{background:var(--blue-soft);color:var(--blue-press)}
+.row{display:flex;gap:8px}
+.input{flex:1;min-width:0;height:52px;border:1.5px solid var(--line);border-radius:var(--r-input);padding:0 14px;background:#fff;font-size:16px}
+.input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 4px var(--blue-soft)}
+.input[readonly]{background:var(--fill);color:var(--sub)}
+.input.ok{border-color:var(--ok)}.input.err{border-color:var(--err)}
+.chk{flex:none;min-width:84px;height:52px;border-radius:var(--r-input);background:var(--blue-soft);color:var(--blue-press);font-weight:600;padding:0 12px}
+.chk:disabled{background:var(--fill);color:#A0A3B5;cursor:not-allowed}
+.chk.done{background:var(--ok-soft);color:var(--ok)}
+.msg{display:flex;gap:6px;font-size:13px;margin-top:8px;min-height:20px;color:var(--sub)}
+.msg.ok{color:var(--ok)}.msg.err{color:var(--err)}
+.pwbox{position:relative;flex:1;display:flex}
+.pwbox .input{width:100%;padding-right:64px}
+.eye{position:absolute;right:4px;top:4px;height:44px;padding:0 12px;font-size:13px;color:var(--sub)}
+.rules{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;margin-top:10px;font-size:13px;color:var(--sub);list-style:none;padding:0}
+.rules li::before{content:"○ ";color:#B4B7C8}
+.rules li.on{color:var(--ok)}.rules li.on::before{content:"✓ ";color:var(--ok)}
+.addr{display:grid;gap:8px}
 
-/* 하단 고정 CTA */
-.cta{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:480px;padding:12px 16px 20px;background:var(--bg);border-top:1px solid var(--line2);z-index:6}
-.btn{display:block;width:100%;height:48px;border-radius:var(--r-m);background:var(--primary);color:#fff;font-weight:600;font-size:16px;letter-spacing:-.025em;transition:background .2s ease-in-out}
-.btn:disabled{background:var(--line2);color:var(--c4);cursor:not-allowed}
-.btn.outline{background:transparent;border:1px solid var(--line);color:var(--c1);margin-top:8px}
-.msg{text-align:center;font-size:12px;color:var(--negative);margin-bottom:8px;min-height:18px}
+/* 4. 약관 */
+.all{display:flex;align-items:center;gap:12px;background:var(--blue-soft);border:1.5px solid var(--blue-line);border-radius:var(--r-card);padding:18px 20px;font-weight:700;font-size:17px;cursor:pointer;min-height:64px}
+.all input,.item input{width:22px;height:22px;accent-color:var(--blue);flex:none}
+.sec{margin-top:24px}
+.sec h2{font-size:14px;color:var(--sub);font-weight:600;margin-bottom:8px}
+.list{background:var(--card);border:1px solid var(--line);border-radius:var(--r-card);overflow:hidden}
+.item{display:flex;align-items:center;gap:12px;padding:14px 18px;min-height:56px;cursor:pointer;border-top:1px solid var(--line)}
+.item:first-child{border-top:0}
+.item span{flex:1;font-size:15px}
+.more{font-size:13px;color:var(--sub);text-decoration:underline;text-underline-offset:3px;min-height:44px;padding:0 4px}
+.sub{padding:4px 18px 14px 52px;display:grid;gap:2px;border-top:0;background:var(--card)}
+.sub label{display:flex;align-items:center;gap:10px;font-size:14px;min-height:40px;cursor:pointer}
+.sub input{width:20px;height:20px;accent-color:var(--blue)}
+.terms{font-size:13px;color:var(--sub);padding:0 18px 14px 52px;background:var(--card)}
+.mk{padding:12px 18px 16px;border-top:1px solid var(--line)}
+.mk b{font-size:14px;display:block;margin-bottom:6px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{position:relative}
+.chip input{position:absolute;opacity:0;inset:0;cursor:pointer}
+.chip span{display:inline-flex;align-items:center;min-height:40px;padding:0 14px;border:1.5px solid var(--line);border-radius:20px;font-size:14px;background:#fff}
+.chip input:checked+span{background:var(--blue-soft);border-color:var(--blue);color:var(--blue-press);font-weight:600}
+.chip input:focus-visible+span{outline:3px solid var(--blue-line);outline-offset:2px}
 
-/* 완료 화면 */
-.hero{padding:32px 16px 8px;text-align:center}
-.hero .ok{width:56px;height:56px;border-radius:50%;background:var(--primary);display:grid;place-items:center;margin:0 auto 16px}
-.hero .ok svg{width:28px;height:28px;stroke:#fff;fill:none;stroke-width:3}
-.hero h1{padding:0}
-.card{border:1px solid var(--line2);border-radius:var(--r-xl);overflow:hidden}
-.card .ch{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:var(--bg2);font-weight:700}
-.card .ch small{font-weight:400;color:var(--c3);font-size:12px}
-.li{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 16px;border-top:1px solid var(--line2)}
-.li span:first-child{flex:1}
-.li small{display:block;color:var(--c3);font-size:12px}
-.info div{display:flex;justify-content:space-between;padding:10px 16px;border-top:1px solid var(--line2)}
-.info div span:first-child{color:var(--c3)}
+/* 5. 완료 */
+.done-head{padding:24px 0 20px;text-align:center}
+.done-ico{width:64px;height:64px;border-radius:50%;background:var(--ok-soft);color:var(--ok);display:grid;place-items:center;font-size:30px;margin:0 auto 16px}
+.kv{display:grid;gap:12px}
+.kv div{display:flex;justify-content:space-between;gap:16px;font-size:15px}
+.kv dt{color:var(--sub)}.kv dd{font-weight:600;text-align:right}
+.badge{font-size:12px;font-weight:600;padding:2px 8px;border-radius:10px;background:var(--fill);color:var(--sub);white-space:nowrap}
+.badge.y{background:var(--ok-soft);color:var(--ok)}
+.li{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line);font-size:14px}
+.li:first-child{border-top:0}
+.li small{display:block;color:var(--sub);font-size:12px}
 
-}
-.cs-old { font-family:"Pretendard Variable","Pretendard",-apple-system,"Malgun Gothic",sans-serif; }
-.cs .head h1 em { font-style: normal; color: #0A61EB; }
-
-.cs { --blue:#0A61EB; --blue-l:#ECF4FE; --ink:#191923; --ink2:#424252; --ink3:#72728A; --dis:#BABAD4; --bg3:#F5F6FA; --line:#EAECF5; --pos:#12891D; --pos-l:#E8F7E9;
-  font-family: "Pretendard Variable","Pretendard",-apple-system,"Malgun Gothic",sans-serif; color: var(--ink); background: var(--bg3); letter-spacing: -0.025em; font-size: 14px; line-height: 1.5; }
-.cs * { box-sizing: border-box; margin: 0; }
-.cs button { font: inherit; letter-spacing: inherit; color: inherit; background: none; border: 0; cursor: pointer; text-align: left; }
-.cs .page { max-width: 480px; min-height: 100vh; margin: 0 auto; background: #fff; padding-bottom: 112px; }
-.cs .top { display: grid; grid-template-columns: 48px 1fr 48px; align-items: center; min-height: 56px; padding: 0 4px; }
-.cs .top b { text-align: center; font-size: 18px; font-weight: 700; }
-.cs .top .back { display: grid; place-items: center; width: 48px; height: 48px; font-size: 26px; text-align: center; }
-.cs .top .stp { padding-right: 16px; text-align: right; font-size: 14px; font-weight: 600; color: var(--blue); }
-.cs .bar { height: 4px; margin: 0 20px; border-radius: 2px; background: var(--line); overflow: hidden; }
-.cs .bar i { display: block; height: 100%; background: #0F78FF; border-radius: 2px; }
-.cs .head { padding: 32px 20px 20px; }
-.cs .head h1 { font-size: 26px; font-weight: 700; line-height: 1.25; }
-.cs .head p { margin-top: 8px; color: var(--ink3); }
-
-/* 전체 동의: 면으로 구분, 아래는 평평한 체크 리스트 */
-.cs .all { margin: 0 20px; padding: 4px 16px; border-radius: 12px; background: var(--bg3); }
-.cs .all .rw { min-height: 56px; font-size: 16px; font-weight: 700; }
-.cs .rw { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 52px; }
-.cs .rw small { display: block; margin-left: 6px; font-size: 12px; font-weight: 400; color: var(--ink3); }
-.cs .all .rw small { display: block; margin: 0; }
-.cs .ck { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 6px; border: 1.5px solid var(--dis); background: #fff; transition: all .2s ease-in-out; }
-.cs .ck::after { content: ""; width: 5px; height: 10px; margin-top: -2px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); opacity: 0; }
-.cs .on > .ck, .cs .ck.on, .cs .rw.on .ck { background: var(--blue); border-color: var(--blue); }
-.cs .on > .ck::after, .cs .ck.on::after, .cs .rw.on .ck::after { opacity: 1; }
-.cs .rw:focus-visible, .cs .tg:focus-visible, .cs .btn:focus-visible { outline: 3px solid #0F78FF; outline-offset: 2px; border-radius: 6px; }
-.cs .list { list-style: none; padding: 8px 20px 0; }
-.cs .list li { display: flex; align-items: center; gap: 8px; }
-.cs .rq { font-style: normal; font-weight: 600; color: var(--blue); }
-.cs .op { font-style: normal; font-weight: 600; color: var(--ink3); }
-.cs .vw { flex: none; padding: 8px 0 8px 12px; font-size: 13px; color: var(--ink3); text-decoration: underline; cursor: pointer; }
-
-/* 선택 항목: 접어서 보여주기 */
-.cs .acc { margin: 0 20px; border-top: 1px solid var(--line); }
-.cs .acc:first-of-type { margin-top: 12px; }
-.cs .ah { display: flex; align-items: center; }
-.cs .tg { flex: none; display: grid; place-items: center; width: 44px; height: 44px; margin-right: -12px; }
-.cs .tg svg { width: 20px; height: 20px; fill: none; stroke: var(--ink3); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform .3s cubic-bezier(.23,1,.5,1); }
-.cs .tg[aria-expanded="true"] svg { transform: rotate(180deg); }
-.cs .ab { list-style: none; padding: 0 0 8px 34px; }
-.cs .ab[hidden] { display: none; }
-.cs .ab .rw { min-height: 44px; font-size: 14px; color: var(--ink2); }
-.cs .perk { margin: 0 0 8px 34px; padding: 8px 12px; border-radius: 8px; background: #FFF5ED; color: #F95401; font-size: 12px; font-weight: 600; }
-.cs .mx { padding: 0 0 8px 34px; }
-.cs .mr { display: grid; grid-template-columns: 1fr minmax(72px, auto) minmax(72px, auto); column-gap: 4px; align-items: center; min-height: 44px; border-bottom: 1px solid var(--line); }
-.cs .mr:last-child { border-bottom: 0; }
-.cs .mr.h { min-height: 32px; font-size: 12px; color: var(--ink3); font-weight: 600; }
-.cs .mr.h span:not(:first-child) { text-align: center; }
-.cs .mr .cell { display: flex; justify-content: center; }
-.cs .mr .cell .rw { width: auto; min-height: 44px; }
-.cs .sum { margin: 4px 20px 0; padding-top: 12px; border-top: 1px solid var(--line); }
-.cs .note { margin: 4px 20px 0; font-size: 12px; color: var(--ink3); }
-/* 추천인 (선택) */
-.cs .ref { margin: 12px 20px 8px; padding-top: 16px; border-top: 1px solid var(--line); }
-.cs .ref-l { display: block; margin-bottom: 8px; font-size: 14px; font-weight: 600; color: var(--ink2); }
-.cs .ref-row { display: flex; flex-wrap: wrap; gap: 8px; }
-.cs .ref-in { flex: 1 1 12em; min-width: 0; min-height: 48px; padding: 8px 16px; border: 1px solid #D2D4E5; border-radius: 8px; font: inherit; font-size: 15px; color: var(--ink); background: #fff; outline: 0; }
-.cs .ref-in::placeholder { color: #9595B2; }
-.cs .ref-in:focus { border-color: var(--ink); }
-.cs .ref-in[readonly] { background: var(--bg3); border-color: var(--bg3); color: var(--ink2); }
-.cs .ref.is-error .ref-in { border-color: #ED1414; }
-.cs .ref-btn { flex: none; min-height: 48px; padding: 8px 16px; border: 1px solid #D2D4E5; border-radius: 8px; background: #fff; font-weight: 600; text-align: center; white-space: nowrap; }
-.cs .ref-btn:hover:not(:disabled) { background: var(--bg3); }
-.cs .ref-btn:disabled { color: var(--dis); cursor: default; }
-.cs .ref-btn:focus-visible, .cs .ref-in:focus-visible { outline: 3px solid #0F78FF; outline-offset: 2px; }
-.cs .ref-msg { margin-top: 8px; font-size: 13px; line-height: 1.4; color: var(--ink3); }
-.cs .ref-msg.ok { color: var(--pos); }
-.cs .ref-msg.err { color: #ED1414; }
-
-/* 하단 고정 CTA */
-.cs .cta { position: fixed; left: 50%; bottom: 0; transform: translateX(-50%); width: 100%; max-width: 480px; padding: 12px 20px calc(16px + env(safe-area-inset-bottom)); background: linear-gradient(to top, #fff 80%, rgba(255,255,255,0)); z-index: 6; }
-.cs .btn { display: block; width: 100%; min-height: 52px; padding: 8px 16px; border-radius: 8px; background: var(--blue); color: #fff; font-size: 16px; font-weight: 600; text-align: center; transition: all .2s ease-in-out; }
-.cs .btn:disabled { background: var(--line); color: var(--ink3); cursor: not-allowed; }
-.cs .btn.ghost { margin-top: 8px; background: #fff; color: var(--ink); border: 1px solid #D2D4E5; }
-
-/* 가입 완료 */
-.cs .hero { padding: 48px 20px 8px; text-align: center; }
-.cs .hero .ok { display: grid; place-items: center; width: 64px; height: 64px; margin: 0 auto 20px; border-radius: 50%; background: #0F78FF; }
-.cs .hero .ok svg { width: 30px; height: 30px; fill: none; stroke: #fff; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
-.cs .hero h1 { font-size: 24px; font-weight: 700; line-height: 1.3; }
-.cs .hero p { margin-top: 8px; color: var(--ink3); }
-.cs .card { margin: 24px 20px 0; border-radius: 16px; background: var(--bg3); overflow: hidden; }
-.cs .card .ch { display: flex; justify-content: space-between; align-items: baseline; padding: 16px 16px 4px; font-weight: 700; font-size: 16px; }
-.cs .card .ch small { font-weight: 400; color: var(--ink3); font-size: 12px; }
-.cs .li { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 16px; }
-.cs .li > span:first-child { flex: 1; }
-.cs .li small { display: block; color: var(--ink3); font-size: 12px; }
-.cs .info > div:not(.ch) { display: flex; justify-content: space-between; gap: 12px; padding: 10px 16px; }
-.cs .info > div:not(.ch) span:first-child { color: var(--ink3); }
-.cs .info > div:last-child { padding-bottom: 16px; }
-.cs .badge { flex: none; font-size: 11px; font-weight: 600; border-radius: 4px; padding: 1px 8px; }
-.cs .badge.y { background: var(--pos-l); color: var(--pos); }
-.cs .badge.n { background: #fff; color: var(--ink3); }
-
-
-.ev .intro h2 em { font-style: normal; color: #0A61EB; }
-/* 가입 혜택 캐러셀 (가입 방식 선택 화면) */
-#v-entry .cr { margin: 0 0 44px; }
-#v-entry .cr-track { position: relative; display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; padding: 4px 0; }
-#v-entry .cr-track::-webkit-scrollbar { display: none; }
-#v-entry .cr-track { cursor: grab; -webkit-user-select: none; user-select: none; }
-#v-entry .cr-track.drag { cursor: grabbing; }
-#v-entry .cr-track::before, #v-entry .cr-track::after { content: ""; flex: 0 0 31.5%; }
-#v-entry .cr-s { flex: 0 0 37%; scroll-snap-align: center; scroll-snap-stop: always; text-align: center; opacity: .35; transform: scale(.82); transition: all .4s cubic-bezier(.23,1,.5,1); }
-#v-entry .cr-s.on { opacity: 1; transform: none; }
-#v-entry .cr-art { display: grid; place-items: center; width: 134px; height: 134px; margin: 0 auto; border-radius: 44px; background: #F5F6FA; }
-#v-entry .cr-art svg { width: 92px; height: 92px; }
-#v-entry .cr-s p { margin-top: 8px; font-size: 14px; color: #191923; }
-#v-entry .cr-dots { display: flex; justify-content: center; gap: 8px; margin-top: 10px; }
-#v-entry .cr-dots button { width: 8px; height: 8px; padding: 0; border: 0; border-radius: 50%; background: #D2D4E5; transition: background .2s linear; }
-#v-entry .cr-dots button[aria-current="true"] { background: #191923; }
-/* 가입 방식: 캡션은 바로 위 버튼에 붙이고, 다음 요소와는 더 띄워 그룹으로 읽히게 */
-#v-entry .content .caption { margin: 0 0 12px; }
-#v-entry .content .sns + .caption { margin: 0; }
+.toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom));transform:translate(-50%,12px);background:rgba(25,25,35,.92);color:#fff;font-size:14px;padding:12px 16px;border-radius:12px;max-width:min(380px,calc(100vw - 40px));opacity:0;pointer-events:none;transition:.2s;z-index:10;text-align:center}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
 </style>
 </head>
 <body>
+<div class="app">
 
-<!-- 1. 가입 방식 선택 -->
-<div class="ev" id="v-entry" data-screen="entry">
-<main class="screen">
-  <header class="app-bar">
-    <span></span>
-    <h1>회원가입</h1>
-    <span class="step">1/4</span>
-  </header>
-  <div class="bar" role="progressbar" aria-valuemin="1" aria-valuemax="4" aria-valuenow="1" aria-label="가입 방식 선택, 1 / 4 단계"><i style="width:25%"></i></div>
-
-  <section class="intro">
-    <h2><em>어떤 방법</em>으로<br>가입하시겠어요?</h2>
-    <p>신세계면세점 회원이 되어 쇼핑 혜택을 이용해 보세요.</p>
-  </section>
-    <div class="cr" role="region" aria-roledescription="carousel" aria-label="가입 혜택 안내">
-      <div class="cr-track" id="crTrack" tabindex="0">
-        <div class="cr-s" role="group" aria-roledescription="slide"><div class="cr-art"><svg viewBox="0 0 120 120" aria-hidden="true"><path d="M24 98L44 44l32 32z" fill="#10AFF7"/><path d="M34 71l19-9 5 5-24 12z" fill="#ECF4FE"/><path d="M27 88l25-12 5 5-34 14z" fill="#ECF4FE" opacity=".7"/><ellipse cx="60" cy="60" rx="22" ry="8" transform="rotate(45 60 60)" fill="#0A61EB"/><path d="M70 36c4-8 12-6 10-16" fill="none" stroke="#FF4B83" stroke-width="3" stroke-linecap="round"/><path d="M84 52c8 0 10-8 18-6" fill="none" stroke="#9253EE" stroke-width="3" stroke-linecap="round"/><circle cx="92" cy="30" r="4" fill="#FFC70E"/><circle cx="56" cy="24" r="3" fill="#9253EE"/><rect x="96" y="66" width="7" height="7" rx="1" fill="#FF4B83" transform="rotate(20 99 69)"/><rect x="40" y="20" width="6" height="6" rx="1" fill="#FFC70E" transform="rotate(30 43 23)"/></svg></div><p>가입하면 웰컴 혜택이 기다려요</p></div>
-        <div class="cr-s" role="group" aria-roledescription="slide"><div class="cr-art"><svg viewBox="0 0 120 120" aria-hidden="true"><g><path d="M62 40h34l4 48H58z" fill="#D90961"/><path d="M62 40h34l1 12H61z" fill="#FF4B83"/><path d="M71 40c0-14 18-14 18 0" fill="none" stroke="#D90961" stroke-width="4" stroke-linecap="round"/><path d="M28 56h44l5 46H23z" fill="#F2A900"/><path d="M28 56h44l1 12H27z" fill="#FFC70E"/><path d="M39 56c0-17 22-17 22 0" fill="none" stroke="#C98A00" stroke-width="4" stroke-linecap="round"/></g><path d="M30 28l3 7 7 3-7 3-3 7-3-7-7-3 7-3z" fill="#FFC70E"/><path d="M98 24l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" fill="#FFC70E"/></svg></div><p>첫 구매 감사, 더블 혜택</p></div>
-        <div class="cr-s" role="group" aria-roledescription="slide"><div class="cr-art"><svg viewBox="0 0 120 120" aria-hidden="true"><path d="M22 46l22 18 16-30 16 30 22-18-8 46H30z" fill="#FFC70E"/><path d="M30 92h60l2-12H28z" fill="#F2A900"/><circle cx="22" cy="44" r="6" fill="#FFE27A"/><circle cx="60" cy="30" r="6" fill="#FFE27A"/><circle cx="98" cy="44" r="6" fill="#FFE27A"/><circle cx="60" cy="72" r="5" fill="#FF4B83"/></svg></div><p>등급이 오를수록 더 큰 혜택</p></div>
-      </div>
-      <div class="cr-dots" id="crDots"><button type="button" aria-label="1번째 안내"></button><button type="button" aria-label="2번째 안내"></button><button type="button" aria-label="3번째 안내"></button></div>
+<!-- 1. 가입 방식 -->
+<section class="screen" id="v-entry">
+  <div class="top"><span class="brand">신세계면세점</span></div>
+  <main>
+    <div class="hero">
+      <h1>신세계면세점 회원이 되어<br>쇼핑 혜택을 이용해 보세요</h1>
     </div>
-
-  <div class="content">
-    <button class="btn btn-primary" type="button" data-go="verification">신세계포인트 통합회원 가입</button>
-    <p class="caption">하나의 ID로 통합회원 서비스를 이용해요</p>
-
-    <button class="btn btn-outline" type="button" data-method="외국인 회원가입">외국인 회원가입 · Join as a foreigner</button>
-
-    <div class="divider"><span>SNS로 간편 가입하기</span></div>
+    <div class="perks" role="list" aria-label="가입 혜택">
+      <div class="perk" role="listitem"><b>첫 구매 감사</b><strong>신규 회원 첫 구매 혜택</strong><p>가입 후 첫 구매에 쓸 수 있어요.</p></div>
+      <div class="perk" role="listitem"><b>더블 혜택</b><strong>포인트가 함께 쌓여요</strong><p>신세계포인트와 면세점 혜택을 한 번에.</p></div>
+      <div class="perk" role="listitem"><b>간편한 가입</b><strong>세 단계면 끝나요</strong><p>본인 인증, 정보 입력, 약관 동의.</p></div>
+    </div>
+    <div class="cta-group">
+      <button class="btn btn-primary" data-go="verification">신세계포인트 통합회원 가입</button>
+      <p class="caption">하나의 ID로 신세계 계열 서비스를 함께 이용해요.</p>
+    </div>
+    <div class="divider">간편하게 시작</div>
     <div class="sns">
-      <button class="sns-btn kakao" type="button" data-oauth="kakao" aria-label="카카오로 가입">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4C7.6 4 4 6.8 4 10.3c0 2.2 1.4 4.1 3.6 5.2L6.8 19l3.7-2.3c.5.1 1 .1 1.5.1 4.4 0 8-2.8 8-6.5S16.4 4 12 4z"/></svg>
-      </button>
-      <button class="sns-btn appcard" type="button" data-method="앱카드 간편가입" aria-label="앱카드로 가입">앱카드</button>
+      <button class="kakao" data-soon="카카오" aria-label="카카오로 가입"><i aria-hidden="true">K</i>카카오</button>
+      <button class="appcard" data-soon="앱카드" aria-label="앱카드로 가입"><i aria-hidden="true">카드</i>앱카드</button>
     </div>
-    <p class="caption">가입 방식에 따라 추가 인증이 필요할 수 있어요</p>
-  </div>
-  <p class="proto">UX 검증용 프로토타입이에요. 실제 가입은 진행되지 않아요.</p>
-</main>
-</div>
+    <p class="login">이미 회원이신가요? <button data-soon="로그인">로그인</button></p>
+  </main>
+</section>
 
 <!-- 2. 본인 인증 -->
-<div class="ev" id="v-verification" data-screen="verification" hidden>
-<main class="screen">
-  <header class="app-bar">
-    <button class="icon-btn" type="button" data-back aria-label="가입 방식 선택으로 돌아가기"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
-    <h1>회원가입</h1>
-    <span class="step">2/4</span>
-  </header>
-  <div class="bar" role="progressbar" aria-valuemin="1" aria-valuemax="4" aria-valuenow="2" aria-label="본인 인증, 2 / 4 단계"><i style="width:50%"></i></div>
-
-  <section class="intro">
-    <p class="eyebrow">본인 인증</p>
-    <h2>본인 인증 방법을<br>선택해 주세요</h2>
-    <p>안전한 회원가입을 위해 본인 확인이 필요해요.</p>
-  </section>
-
-  <form class="content" id="verification-form">
-    <fieldset>
-      <legend class="sr-only">인증 방법 선택</legend>
-      <label class="row"><input type="radio" name="verification" value="phone">
-        <span class="txt"><b>휴대폰 인증</b><small>본인 명의 휴대폰으로 인증해요</small></span><span class="radio" aria-hidden="true"></span></label>
-      <label class="row"><input type="radio" name="verification" value="certificate">
-        <span class="txt"><b>신한인증서</b><small>신한인증서로 본인을 확인해요</small></span><span class="radio" aria-hidden="true"></span></label>
-      <label class="row"><input type="radio" name="verification" value="card">
-        <span class="txt"><b>카드 인증</b><small>지원되는 카드로 본인을 확인해요</small></span><span class="radio" aria-hidden="true"></span></label>
-    </fieldset>
-    <p class="caption">가입 유형에 따라 이용 가능한 방법이 다를 수 있어요</p>
-
-    <div class="bottom">
-      <button class="btn-primary" id="continue-button" type="submit" disabled>인증 방법을 선택해 주세요</button>
-      <p class="proto">프로토타입이에요. 실제 인증 없이 다음 화면으로 이동해요.</p>
+<section class="screen" id="v-verification" hidden>
+  <div class="top"><button class="back" data-back aria-label="뒤로">‹</button>
+    <div class="steps" role="img" aria-label="3단계 중 1단계"><i class="on"></i><i></i><i></i><span>1/3</span></div></div>
+  <form id="verify-form" style="display:contents">
+  <main>
+    <div class="head"><h1>본인 확인을 먼저 할게요</h1><p class="lead">인증한 이름과 휴대폰 번호는 다음 화면에 자동으로 채워져요.</p></div>
+    <div class="opts" role="radiogroup" aria-label="인증 방법">
+      <label class="opt"><input type="radio" name="verification" value="phone"><span><strong>휴대폰 인증</strong><small>통신사 문자로 확인해요</small></span></label>
+      <label class="opt"><input type="radio" name="verification" value="certificate"><span><strong>신한인증서</strong><small>앱에서 간편하게 확인해요</small></span></label>
+      <label class="opt"><input type="radio" name="verification" value="card"><span><strong>카드 인증</strong><small>보유한 카드 정보로 확인해요</small></span></label>
     </div>
-  </form>
-</main>
-</div>
-
-<!-- 3. 정보입력 (information 브랜치) -->
-<div id="v-info" data-screen="info" hidden>
-
-<div class="si-app" id="siApp">
-
-  <header class="si-header">
-    <button type="button" class="si-icon-btn" id="siBack" aria-label="이전 단계">
-      <svg width="24" height="24" fill="none" stroke="#191923" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
-    </button>
-    <span class="si-header-title">회원가입</span>
-    <span style="width:40px"></span>
-  </header>
-
-  <div class="si-steps" aria-hidden="true">
-    <span class="is-done"></span><span class="is-done"></span><span class="is-done"></span><span></span>
-  </div>
-  <p class="si-step-label"><b>3</b> / 4 · 정보입력</p>
-
-  <main class="si-main">
-    <h1 class="si-title">정보를 입력해 주세요</h1>
-    <p class="si-desc"><span class="si-req">*</span> 표시는 필수 입력 항목이에요.</p>
-
-    <form id="siForm" novalidate autocomplete="on">
-
-      <!-- 간편가입으로 왔을 때만 보인다. 이때 아이디·비밀번호 칸은 숨긴다 -->
-      <p class="si-social" id="siSocial" role="status" hidden></p>
-
-      <!-- 아이디 -->
-      <div class="si-field" data-field="userId">
-        <label class="si-label" for="siUserId">아이디 <span class="si-req">*</span></label>
-        <div class="si-row">
-          <div class="si-input-wrap">
-            <input class="si-input" id="siUserId" name="userId" type="text" inputmode="latin"
-                   autocomplete="username" autocapitalize="off" spellcheck="false" maxlength="20"
-                   placeholder="영문, 숫자 6~20자" />
-          </div>
-          <button type="button" class="si-btn si-btn-outline" id="siIdCheck" disabled>중복확인</button>
-        </div>
-        <p class="si-msg" id="siUserIdMsg" hidden></p>
-      </div>
-
-      <!-- 비밀번호 -->
-      <div class="si-field" data-field="password">
-        <label class="si-label" for="siPw">비밀번호 <span class="si-req">*</span></label>
-        <div class="si-input-wrap">
-          <input class="si-input has-end" id="siPw" name="password" type="password"
-                 autocomplete="new-password" maxlength="20" placeholder="비밀번호 입력"
-                 aria-describedby="siPwRules" />
-          <button type="button" class="si-end-btn" data-toggle-pw="siPw" aria-label="비밀번호 보기"></button>
-        </div>
-        <!-- 기존 2줄 placeholder 문구를 입력창 밖으로 -->
-        <ul class="si-rules" id="siPwRules">
-          <li data-rule="length">8자 이상</li>
-          <li data-rule="case">대소문자</li>
-          <li data-rule="digit">숫자</li>
-          <li data-rule="special">특수문자</li>
-        </ul>
-      </div>
-
-      <!-- 비밀번호 확인 -->
-      <div class="si-field" data-field="passwordConfirm">
-        <label class="si-label" for="siPw2">비밀번호 확인 <span class="si-req">*</span></label>
-        <div class="si-input-wrap">
-          <input class="si-input has-end" id="siPw2" name="passwordConfirm" type="password"
-                 autocomplete="new-password" maxlength="20" placeholder="비밀번호 다시 입력" />
-          <button type="button" class="si-end-btn" data-toggle-pw="siPw2" aria-label="비밀번호 보기"></button>
-        </div>
-        <p class="si-msg" id="siPw2Msg" hidden aria-live="polite"></p>
-      </div>
-
-      <!-- 닉네임 : 아이디·비밀번호 바로 아래 -->
-      <div class="si-field" data-field="nickname">
-        <label class="si-label" for="siNick">닉네임 <span class="si-req">*</span></label>
-        <div class="si-row">
-          <div class="si-input-wrap">
-            <input class="si-input" id="siNick" name="nickname" type="text" autocomplete="nickname"
-                   spellcheck="false" maxlength="10" placeholder="한글, 영문, 숫자 2~10자" />
-          </div>
-          <button type="button" class="si-btn si-btn-outline" id="siNickCheck" disabled>중복확인</button>
-        </div>
-        <p class="si-msg" id="siNickMsg" hidden></p>
-      </div>
-
-      <!-- 이름 / 휴대폰 : 본인인증 단계에서 받은 값 -->
-      <div class="si-field">
-        <label class="si-label" for="siName">이름 <span class="si-req">*</span></label>
-        <input class="si-input" id="siName" name="name" type="text" readonly />
-      </div>
-      <div class="si-field">
-        <label class="si-label" for="siPhone">휴대폰번호 <span class="si-req">*</span></label>
-        <input class="si-input" id="siPhone" name="phone" type="tel" readonly />
-        <p class="si-msg is-info">본인인증으로 확인된 정보예요.</p>
-      </div>
-
-      <!-- 이메일 : 한 줄 -->
-      <div class="si-field" data-field="email">
-        <label class="si-label" for="siEmailId">이메일 <span class="si-req">*</span></label>
-        <div class="si-row">
-          <div class="si-input-wrap">
-            <input class="si-input" id="siEmailId" name="emailId" type="email" inputmode="email" aria-describedby="siEmailMsg"
-                   autocomplete="off" autocapitalize="off" spellcheck="false"
-                   placeholder="이메일 아이디" />
-          </div>
-          <span class="si-at">@</span>
-          <div class="si-input-wrap" id="siDomainWrap">
-            <select class="si-select is-placeholder" id="siDomainSelect" aria-label="이메일 도메인" aria-describedby="siEmailMsg">
-              <option value="">선택</option>
-              <option>naver.com</option>
-              <option>gmail.com</option>
-              <option>daum.net</option>
-              <option>hanmail.net</option>
-              <option>kakao.com</option>
-              <option>nate.com</option>
-              <option>hotmail.com</option>
-              <option value="__direct">직접입력</option>
-            </select>
-            <input class="si-input has-end" id="siDomainInput" type="text" inputmode="email"
-                   autocapitalize="off" spellcheck="false" placeholder="직접입력" aria-label="이메일 도메인 직접입력" aria-describedby="siEmailMsg" hidden />
-            <button type="button" class="si-end-btn" id="siDomainReset" aria-label="도메인 목록에서 선택" hidden>
-              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l8 8M13 5l-8 8"/></svg>
-            </button>
-          </div>
-        </div>
-        <div class="si-email-foot">
-          <p class="si-msg is-info" id="siEmailMsg" role="status" aria-live="polite"><span>이메일을 입력해 주세요.</span></p>
-          <button type="button" class="si-btn si-btn-outline" id="siEmailCheck" disabled>이메일 확인</button>
-        </div>
-      </div>
-
-      <!-- 자택주소 (선택) : 우편번호를 바로 입력해도 검색 -->
-      <div class="si-field" data-field="address">
-        <label class="si-label" for="siZip">자택주소 <span class="si-opt">(선택)</span></label>
-        <div class="si-row">
-          <div class="si-input-wrap">
-            <input class="si-input" id="siZip" name="zipcode" type="text" autocomplete="postal-code"
-                   placeholder="우편번호 또는 주소 입력" enterkeyhint="search" />
-          </div>
-          <button type="button" class="si-btn si-btn-outline" id="siAddrSearch">주소 검색</button>
-        </div>
-        <div class="si-addr-extra" id="siAddrExtra" hidden>
-          <textarea class="si-input si-textarea" id="siAddr1" name="address1" rows="1" readonly aria-label="기본주소"></textarea>
-          <input class="si-input" id="siAddr2" name="address2" type="text" autocomplete="address-line2"
-                 placeholder="상세주소 입력 (동·호수 등)" aria-label="상세주소" />
-        </div>
-        <p class="si-msg is-info" id="siAddrMsg">우편번호 5자리나 도로명·지번·건물명으로 검색할 수 있어요.</p>
-      </div>
-
-    </form>
+    <p class="note">시연용 화면이에요. 실제 인증 없이 예시 정보(김신세)로 다음 단계로 넘어가요.</p>
   </main>
+  <div class="foot"><button class="btn btn-primary" id="verify-btn" type="submit" disabled>인증 방법을 선택해 주세요</button></div>
+  </form>
+</section>
 
-  <div class="si-bottom">
-    <button type="submit" form="siForm" class="si-btn si-btn-primary" id="siSubmit" disabled>다음</button>
-  </div>
+<!-- 3. 정보 입력 -->
+<section class="screen" id="v-info" hidden>
+  <div class="top"><button class="back" data-back aria-label="뒤로">‹</button>
+    <div class="steps" role="img" aria-label="3단계 중 2단계"><i class="on"></i><i class="on"></i><i></i><span>2/3</span></div></div>
+  <main>
+    <div class="head"><h1>회원 정보를 입력해 주세요</h1><p class="lead">꼭 필요한 정보만 받아요.</p></div>
+    <div class="group">
+      <div class="field"><label class="l" for="f-name">이름</label>
+        <input class="input" id="f-name" readonly><p class="msg">본인 인증에서 확인된 정보예요.</p></div>
+      <div class="field"><label class="l" for="f-phone">휴대폰 번호</label>
+        <input class="input" id="f-phone" readonly></div>
 
-  <!-- 주소 검색 레이어 -->
-  <div class="si-layer" id="siAddrLayer" hidden role="dialog" aria-modal="true" aria-labelledby="siAddrLayerTitle">
-    <div class="si-sheet">
-      <div class="si-sheet-head">
-        <span id="siAddrLayerTitle">주소 검색</span>
-        <button type="button" class="si-icon-btn" id="siAddrClose" aria-label="닫기">
-          <svg width="22" height="22" fill="none" stroke="#191923" stroke-width="2" stroke-linecap="round"><path d="M5 5l12 12M17 5L5 17"/></svg>
-        </button>
-      </div>
-      <div class="si-sheet-body" id="siAddrBody"></div>
+      <div class="field"><label class="l" for="f-email">이메일 <span class="tag req">필수</span></label>
+        <div class="row"><input class="input" id="f-email" type="email" inputmode="email" autocomplete="email" placeholder="example@email.com" aria-describedby="m-email">
+        <button class="chk" id="b-email" type="button" disabled>이메일 확인</button></div>
+        <p class="msg" id="m-email" aria-live="polite"></p></div>
+
+      <div class="field"><label class="l" for="f-id">아이디 <span class="tag req">필수</span></label>
+        <div class="row"><input class="input" id="f-id" autocomplete="username" autocapitalize="none" placeholder="영문 소문자 포함 6~20자" aria-describedby="m-id">
+        <button class="chk" id="b-id" type="button" disabled>중복확인</button></div>
+        <p class="msg" id="m-id" aria-live="polite"></p></div>
+
+      <div class="field"><label class="l" for="f-pw">비밀번호 <span class="tag req">필수</span></label>
+        <div class="row"><div class="pwbox"><input class="input" id="f-pw" type="password" autocomplete="new-password" placeholder="8~20자" aria-describedby="rules">
+        <button class="eye" type="button" data-eye="f-pw" aria-label="비밀번호 보기">보기</button></div></div>
+        <ul class="rules" id="rules"><li data-r="len">8~20자</li><li data-r="lower">영문 소문자</li><li data-r="upper">영문 대문자</li><li data-r="num">숫자</li><li data-r="sym">특수문자</li><li data-r="sp">공백 없음</li></ul></div>
+
+      <div class="field"><label class="l" for="f-pw2">비밀번호 확인 <span class="tag req">필수</span></label>
+        <div class="pwbox"><input class="input" id="f-pw2" type="password" autocomplete="new-password" aria-describedby="m-pw2">
+        <button class="eye" type="button" data-eye="f-pw2" aria-label="비밀번호 확인 보기">보기</button></div>
+        <p class="msg" id="m-pw2" aria-live="polite"></p></div>
+
+      <div class="field"><label class="l" for="f-nick">닉네임 <span class="tag req">필수</span></label>
+        <div class="row"><input class="input" id="f-nick" autocomplete="nickname" placeholder="한글·영문·숫자 2~10자" aria-describedby="m-nick">
+        <button class="chk" id="b-nick" type="button" disabled>중복확인</button></div>
+        <p class="msg" id="m-nick" aria-live="polite"></p></div>
+
+      <div class="field"><label class="l">주소 <span class="tag">선택</span></label>
+        <div class="addr"><div class="row"><input class="input" id="f-zip" inputmode="numeric" maxlength="5" placeholder="우편번호 5자리" aria-label="우편번호">
+          <button class="chk" id="b-zip" type="button">주소 검색</button></div>
+        <input class="input" id="f-a1" placeholder="기본 주소" aria-label="기본 주소">
+        <input class="input" id="f-a2" placeholder="상세 주소" aria-label="상세 주소"></div>
+        <p class="msg" id="m-addr" aria-live="polite">비워 두어도 가입할 수 있어요.</p></div>
     </div>
-  </div>
-
-  <div class="si-toast" id="siToast" role="status"></div>
-</div>
-
-
-</div>
+  </main>
+  <div class="foot"><p class="hint" id="info-hint" aria-live="polite"></p><button class="btn btn-primary" id="info-next" disabled>다음</button></div>
+</section>
 
 <!-- 4. 약관 동의 -->
-<div class="cs" id="v-consent" data-screen="consent" hidden>
-<div class="page">
-  <header class="top"><button type="button" class="back" data-back aria-label="이전 단계">‹</button><b>회원가입</b><span class="stp">4/4</span></header>
-  <div class="bar" role="progressbar" aria-valuemin="1" aria-valuemax="4" aria-valuenow="4" aria-label="약관 동의, 4 / 4 단계"><i style="width:100%"></i></div>
-  <section class="head">
-    <h1><em>약관에 동의</em>해 주세요</h1>
-    <p>필수 항목만 동의해도 가입할 수 있어요.</p>
-  </section>
+<section class="screen" id="v-consent" hidden>
+  <div class="top"><button class="back" data-back aria-label="뒤로">‹</button>
+    <div class="steps" role="img" aria-label="3단계 중 3단계"><i class="on"></i><i class="on"></i><i class="on"></i><span>3/3</span></div></div>
+  <main>
+    <div class="head"><h1>약관에 동의해 주세요</h1><p class="lead">필수 항목만 동의해도 가입할 수 있어요.</p></div>
+    <label class="all"><input type="checkbox" id="c-all"><span>전체 동의</span></label>
 
-  <div class="all"><button type="button" class="rw" id="allBtn" role="checkbox" aria-checked="false"><span class="ck"></span><span>전체 동의<small>선택 항목(통합 서비스·마케팅)까지 모두 동의해요</small></span></button></div>
-
-  <ul class="list" id="reqList"></ul>
-
-  <div class="acc">
-    <div class="ah">
-      <button type="button" class="rw" id="svcAll" role="checkbox" aria-checked="false"><span class="ck"></span><span><i class="op">(선택)</i> 통합 ID 서비스 이용<small id="svcSub"></small></span></button>
-      <button type="button" class="tg" data-acc="svcList" aria-expanded="false" aria-label="서비스 목록 펼치기"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+    <div class="sec"><h2>필수</h2>
+      <div class="list" id="c-req">
+        <label class="item"><input type="checkbox" data-req="terms"><span>[필수] 이용약관</span></label>
+        <label class="item"><input type="checkbox" data-req="privacy"><span>[필수] 개인정보 수집·이용</span></label>
+        <label class="item"><input type="checkbox" data-req="age"><span>[필수] 만 14세 이상입니다</span></label>
+      </div>
+      <p class="caption" style="text-align:left;margin-top:8px">약관 문구는 시연용 예시예요.</p>
     </div>
-    <ul class="ab" id="svcList" hidden></ul>
-  </div>
 
-  <div class="acc">
-    <div class="ah">
-      <button type="button" class="rw" id="mkAll" role="checkbox" aria-checked="false"><span class="ck"></span><span><i class="op">(선택)</i> 마케팅 수신 동의<small>포인트 · 면세점</small></span></button>
-      <button type="button" class="tg" data-acc="mkBody" aria-expanded="false" aria-label="수신 방법 펼치기"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+    <div class="sec"><h2>선택</h2>
+      <div class="list">
+        <div class="item" style="cursor:default"><input type="checkbox" id="c-svc-all" aria-label="통합 ID 서비스 전체"><span>통합 ID 서비스 이용 <small id="svc-count" style="color:var(--sub)">0/9</small></span>
+          <button class="more" type="button" id="svc-toggle" aria-expanded="false" aria-controls="svc-list">펼치기</button></div>
+        <div class="sub" id="svc-list" hidden></div>
+        <div class="mk"><b>신세계포인트 마케팅 수신</b><div class="chips" id="mk-point"></div></div>
+        <div class="mk"><b>신세계면세점 마케팅 수신</b><div class="chips" id="mk-duty"></div></div>
+        <label class="item"><input type="checkbox" id="c-night"><span>야간 마케팅 수신 <small style="color:var(--sub)">21~08시</small></span></label>
+      </div>
     </div>
-    <p class="perk">면세점 마케팅 동의 시 GOLD 등급(최대 15% 할인) 즉시 적용 · 유지 1년</p>
-    <div id="mkBody" hidden><div class="mx" id="matrix"></div></div>
-  </div>
-  <div class="sum" id="mkSum" hidden></div>
 
-  <!-- 추천인 (선택) : 선택 항목 바로 아래 -->
-  <div class="ref" id="refBox">
-    <label class="ref-l" for="refInput"><i class="op">(선택)</i> 추천인 아이디</label>
-    <div class="ref-row">
-      <input class="ref-in" id="refInput" type="text" inputmode="latin" autocapitalize="off" spellcheck="false"
-             maxlength="20" placeholder="추천해 준 회원의 아이디" aria-describedby="refMsg" />
-      <button type="button" class="ref-btn" id="refBtn" disabled>확인</button>
-    </div>
-    <p class="ref-msg" id="refMsg" role="status" aria-live="polite">추천해 준 회원이 있으면 아이디를 입력해 주세요.</p>
-  </div>
-  <p class="note">광고성 정보 수신을 거부해도 주문·배송·약관 변경 등 고객 안내는 발송돼요.</p>
+    <div class="sec" id="ref-box"><h2>추천인 <span class="tag">선택</span></h2>
+      <div class="row"><input class="input" id="f-ref" autocapitalize="none" placeholder="추천인 아이디" aria-label="추천인 아이디" aria-describedby="m-ref">
+        <button class="chk" id="b-ref" type="button" disabled>확인</button></div>
+      <p class="msg" id="m-ref" aria-live="polite">추천인이 있다면 입력해 주세요.</p></div>
+  </main>
+  <div class="foot"><p class="hint" id="consent-hint" aria-live="polite"></p><button class="btn btn-primary" id="submit" disabled>가입하기</button></div>
+</section>
 
-  <div class="cta"><button class="btn" id="submit" type="button">동의하고 가입하기</button></div>
-</div>
-</div>
+<!-- 5. 완료 -->
+<section class="screen" id="v-done" hidden>
+  <div class="top"><span class="brand">신세계면세점</span></div>
+  <main>
+    <div class="done-head"><div class="done-ico" aria-hidden="true">✓</div>
+      <h1 id="done-title"></h1><p class="lead" id="done-sub"></p></div>
+    <div class="card"><dl class="kv">
+      <div><dt>닉네임</dt><dd id="d-nick"></dd></div>
+      <div><dt>휴대폰</dt><dd id="d-phone"></dd></div>
+      <div><dt>이메일</dt><dd id="d-email"></dd></div>
+      <div><dt>가입일</dt><dd id="d-date"></dd></div>
+      <div><dt>추천인</dt><dd id="d-ref"></dd></div></dl></div>
+    <div class="sec"><h2>동의 현황</h2><div class="card" id="d-list" style="padding:8px 20px"></div></div>
+  </main>
+  <div class="foot"><button class="btn btn-primary" data-soon="쇼핑">쇼핑 시작하기</button>
+    <button class="btn btn-ghost" id="edit-consent" style="margin-top:4px">동의 내용 수정</button></div>
+</section>
 
-<!-- 5. 가입 완료 -->
-<div class="cs-old" id="v-done" data-screen="done" hidden>
-<div class="app">
-<!-- ========== 2. 완료 화면 (팝업 2번 → 결과 한 번) ========== -->
-<div id="done">
-  <header><span style="width:24px"></span><b>가입 완료</b><span style="width:24px"></span></header>
-  <div class="hero">
-    <div class="ok"><svg viewBox="0 0 28 28"><path d="M6 14.5l5.5 5L22 8.5"/></svg></div>
-    <h1 id="doneTitle">김*민 님,<br>통합 ID 가입이 완료됐어요</h1>
-    <p class="sub" id="doneSub">동의 내용은 아래 한 곳에서 확인하고 바꿀 수 있어요.</p>
-  </div>
-  <section>
-    <div class="card">
-      <div class="ch">동의 현황 <small id="doneDate"></small></div>
-      <div id="doneList"></div>
-    </div>
-  </section>
-  <section>
-    <div class="card info">
-      <div class="ch">회원정보</div>
-      <div><span>가입 방식</span><span id="doneMethod">통합회원 아이디</span></div>
-      <div><span>닉네임</span><span id="doneNick">-</span></div>
-      <div><span>휴대폰</span><span id="donePhone">010-50**-43**</span></div>
-      <div><span>이메일</span><span id="doneEmail">gu********@naver.com</span></div>
-      <div><span>주소</span><span id="doneAddr">경기 하남시 덕산로, *****</span></div>
-      <div><span>추천인</span><span id="doneRef">입력하지 않았어요</span></div>
-    </div>
-    <p class="note">본인인증으로 확인된 정보로 자동 업데이트돼요.</p>
-  </section>
-  <div class="cta">
-    <button class="btn" type="button">쇼핑 시작하기</button>
-    <button class="btn outline" id="edit" type="button">동의 내용 수정</button>
-  </div>
 </div>
-</div>
-</div>
+<div class="toast" id="toast" role="status"></div>
 
 <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js" async></script>
 <script>
+(()=>{
+"use strict";
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 
-// ===== 화면 전환 (history 기반: 각 화면의 뒤로가기 = history.back) =====
+/* ===== 화면 전환 (history 기반: 뒤로가기 = history.back) ===== */
 const SCREENS=["entry","verification","info","consent","done"];
-function show(n){SCREENS.forEach(s=>{document.getElementById("v-"+s).hidden=s!==n});scrollTo(0,0)}
+function show(n){SCREENS.forEach(s=>{$("#v-"+s).hidden=s!==n});scrollTo(0,0)}
 function go(n){history.pushState({s:n},"");show(n)}
+window.go=go; // 콘솔에서 go('info') 로 바로 이동해 확인할 수 있다
 history.replaceState({s:"entry"},"");
 addEventListener("popstate",e=>show((e.state&&e.state.s)||"entry"));
 document.addEventListener("click",e=>{
-  const g=e.target.closest("[data-go]"); if(g){go(g.dataset.go);return}
-  if(e.target.closest("[data-back]"))history.back();
+  const g=e.target.closest("[data-go]");if(g){go(g.dataset.go);return}
+  if(e.target.closest("[data-back]")){history.back();return}
+  const s=e.target.closest("[data-soon]");if(s)toast(`${s.dataset.soon}은 프로토타입에서 준비 중이에요.`);
 });
-// 프로토타입 안내 토스트
-function showToast(msg){
-  let t=document.querySelector(".ev-toast");
-  if(!t){t=document.createElement("div");t.className="ev-toast";t.setAttribute("role","status");document.body.append(t)}
-  t.textContent=msg;t.classList.add("show");clearTimeout(showToast.t);showToast.t=setTimeout(()=>t.classList.remove("show"),2600);
-}
-// ===== 백엔드 연결 =====
-// server.py 로 열면 실제 API를 쓰고, index.html 만 열면(서버 없음) 기존 모의 응답으로 동작한다.
-// Supabase 로 쓰려면 <meta name="signup-api-base"> 에 Edge Function 주소(https://<프로젝트>.supabase.co/functions/v1/api)를 넣는다.
-const SignupAPI=(()=>{
+let tt;function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("show");clearTimeout(tt);tt=setTimeout(()=>t.classList.remove("show"),2600)}
+
+/* ===== 백엔드 연결 =====
+   meta[signup-api-base] 에 Edge Function 주소가 있으면 실제 API, 비어 있으면 모의 응답.
+   화면 코드는 /api/... 경로 그대로 쓰고 여기서 주소만 바꾼다. */
+const API=(()=>{
   const m=document.querySelector('meta[name="signup-api-base"]');
   const base=((m&&m.content)||"").trim().replace(/\/$/,"");
-  const url=p=>base?base+p.replace(/^\/api/,""):p; // 화면 코드는 /api/... 경로 그대로 쓴다
-  const ready=base||/^https?:$/.test(location.protocol)
-    ?fetch(url("/api/health")).then(r=>r.ok&&r.json()).then(d=>!!(d&&d.ok)).catch(()=>false)
-    :Promise.resolve(false);
+  const url=p=>base+p.replace(/^\/api/,"");
+  const ready=base?fetch(url("/api/health")).then(r=>r.ok&&r.json()).then(d=>!!(d&&d.ok)).catch(()=>false):Promise.resolve(false);
   async function call(path,body){
     const opt=body===undefined?{}:{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)};
-    let r;
-    try{r=await fetch(url(path),opt)}catch(e){const err=new Error("서버에 연결할 수 없어요. 잠시 후 다시 시도해 주세요.");err.code="network";throw err}
-    const data=await r.json().catch(()=>({}));
-    if(!r.ok){const err=new Error(data.message||"잠시 후 다시 시도해 주세요.");err.status=r.status;err.code=data.error;throw err}
-    return data;
+    let r;try{r=await fetch(url(path),opt)}catch(e){const er=new Error("서버에 연결할 수 없어요. 잠시 후 다시 시도해 주세요.");er.code="network";throw er}
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok){const er=new Error(d.message||"잠시 후 다시 시도해 주세요.");er.code=d.error;throw er}
+    return d;
   }
-  return {ready,call,base};
+  return {ready,call};
 })();
-let signupInfo=null;   // 정보입력 값 (비밀번호 포함, 메모리에만 보관)
-let signupResult=null; // 가입 완료 후 받은 값 (동의 수정용 토큰)
-let socialSignup=null; // 간편가입 티켓으로 받은 프로필
+const wait=(ms,v)=>new Promise(r=>setTimeout(()=>r(v),ms));
 
-// ===== 간편가입 (OAuth) =====
-// 버튼 → 서버 /api/auth/{제공자}/start → 제공자 로그인 → 서버 콜백 → /#social=티켓 으로 돌아온다.
-// 가입만 다룬다: 티켓으로 프로필을 받아 본인인증 → 정보입력(아이디·비밀번호 없음) → 약관 동의로 이어간다.
-document.addEventListener("click",async e=>{
-  // 간편가입 뒤 돌아와서 통합회원 가입을 고르면 일반 가입으로 되돌린다
-  if(socialSignup&&e.target.closest('#v-entry [data-go="verification"]')){socialSignup=null;ShinInfo.setSocial(null)}
-  const b=e.target.closest("[data-oauth]");if(!b)return;
-  if(SignupAPI.base){showToast("간편가입은 아직 Supabase로 옮기지 않았어요.");return}
-  if(!(await SignupAPI.ready)){showToast("server.py 로 열어야 간편가입을 시험할 수 있어요.");return}
-  location.href="/api/auth/"+encodeURIComponent(b.dataset.oauth)+"/start";
-});
-const SOCIAL_ERRORS={
-  denied:"간편가입을 취소했어요.",
-  state:"간편가입을 처음부터 다시 진행해 주세요.",
-  provider:"간편가입 서비스와 연결하지 못했어요. 잠시 후 다시 시도해 주세요.",
-  already:"이미 이 계정으로 가입했어요."
+/* ===== 서버 없이 열었을 때 쓰는 모의 응답 (실제 이력 조회가 아니다) =====
+   이메일: rejoin* → 30일 이내 복귀, old* → 30일 지나 신규, blocked* → 가입 제한, 그 외 → 신규 */
+const mock={
+  id:id=>wait(300,!["admin","shinsegae","test1234","gudals4360","friend1234"].includes(id)),
+  nick:n=>wait(300,!["관리자","운영자","admin","신세계","친구"].includes(n.toLowerCase())),
+  ref:id=>wait(300,id==="friend1234"),
+  email:e=>{const id=e.split("@")[0];return wait(700,
+    id.startsWith("rejoin")?{status:"returning",daysLeft:20,firstJoinedAt:"2024-03-15T00:00:00Z"}
+    :id.startsWith("old")?{status:"rejoin_new",reason:"expired"}
+    :id.startsWith("blocked")?{status:"unavailable"}:{status:"available"})}
 };
-document.addEventListener("DOMContentLoaded",async()=>{
-  const h=new URLSearchParams(location.hash.slice(1)),ticket=h.get("social"),err=h.get("social_error");
-  if(!ticket&&!err)return;
-  history.replaceState({s:"entry"},"",location.pathname); // 티켓이 주소창·기록에 남지 않게
-  if(err){showToast(SOCIAL_ERRORS[err]||SOCIAL_ERRORS.state);return}
-  try{
-    socialSignup={ticket,...await SignupAPI.call("/api/auth/ticket",{ticket})};
-    ShinInfo.setSocial(socialSignup);
-    showToast(`${socialSignup.providerName} 계정을 확인했어요. 본인인증을 진행해 주세요.`);
-    go("verification");
-  }catch(e){showToast(e.message)}
-});
+const api={
+  id:async v=>(await API.ready)?(await API.call("/api/users/check-id?userId="+encodeURIComponent(v))).available:mock.id(v),
+  nick:async v=>(await API.ready)?(await API.call("/api/users/check-nickname?nickname="+encodeURIComponent(v))).available:mock.nick(v),
+  ref:async v=>(await API.ready)?(await API.call("/api/users/check-referrer?userId="+encodeURIComponent(v))).exists:mock.ref(v),
+  email:async(v,phone)=>(await API.ready)?API.call("/api/email/check",{email:v,phone}):mock.email(v)
+};
 
-// 정보입력 완료 → 약관 동의로 이동, 완료 화면의 회원정보에 마스킹해서 반영
+/* ===== 공통 상태 ===== */
+const S={verified:null,info:null,result:null};
+const DEMO={name:"김신세",phone:"010-1234-5678"}; // 시연용 본인인증 값
 const mask={
   name:n=>n.length<3?n[0]+"*":n[0]+"*".repeat(n.length-2)+n.slice(-1),
   phone:p=>{const d=p.replace(/\D/g,"");return d.length>=10?`${d.slice(0,3)}-${d.slice(3,5)}**-${d.slice(-4,-2)}**`:p},
   email:m=>{const[i,d]=m.split("@");return i.slice(0,2)+"*".repeat(Math.max(i.length-2,2))+"@"+d}
 };
-document.addEventListener("shin:info-complete",e=>{
-  const {emailCheck,...d}=e.detail,$id=id=>document.getElementById(id);
-  signupInfo=d;signupResult=null;
-  // 서버 없이 열었을 때 완료 화면 문구에 쓰는 값 (서버가 있으면 가입 응답의 memberType 이 우선)
-  signupInfo.memberHint=emailCheck&&emailCheck.status==="returning"?"returning":"new";
-  $id("doneNick").textContent=d.nickname;
-  $id("doneMethod").textContent=socialSignup?`${socialSignup.providerName} 간편가입`:"통합회원 아이디";
-  $id("donePhone").textContent=mask.phone(d.phone);$id("doneEmail").textContent=mask.email(d.email);
-  $id("doneAddr").textContent=d.address?d.address.address1.split(" ").slice(0,3).join(" ")+", *****":"입력하지 않았어요";
-  document.dispatchEvent(new CustomEvent("shin:consent-open"));
-  go("consent");
-});
-// 완료 화면 제목: 신규 / 복귀 회원
-const fmtDate=iso=>{const t=new Date(iso);return `${t.getFullYear()}. ${t.getMonth()+1}. ${t.getDate()}.`};
-function renderDoneHero(memberType,firstJoinedAt){
-  const n=mask.name(signupInfo?signupInfo.name:"김신세"),back=memberType==="returning";
-  document.getElementById("doneTitle").innerHTML=back?`${n} 님,<br>다시 오신 걸 환영해요`:`${n} 님,<br>통합 ID 가입이 완료됐어요`;
-  document.getElementById("doneSub").textContent=back
-    ?(firstJoinedAt?`탈퇴 전 가입일(${fmtDate(firstJoinedAt)})을 이어서 기존 회원으로 복귀했어요.`:"탈퇴 후 30일이 지나지 않아 기존 회원으로 복귀했어요.")
-    :"동의 내용은 아래 한 곳에서 확인하고 바꿀 수 있어요.";
+
+/* ===== 2. 본인 인증 ===== */
+(()=>{
+  const form=$("#verify-form"),btn=$("#verify-btn"),names={phone:"휴대폰 인증",certificate:"신한인증서",card:"카드 인증"};
+  form.addEventListener("change",e=>{btn.disabled=false;btn.textContent=`${names[e.target.value]}으로 계속하기`});
+  form.addEventListener("submit",e=>{
+    e.preventDefault();const p=form.verification.value;if(!p)return;
+    btn.disabled=true;btn.textContent="확인하고 있어요";
+    toast(`${names[p]} 선택 완료. 실제 인증 없이 예시 정보로 이어가요.`);
+    setTimeout(()=>{S.verified={...DEMO};fillVerified();go("info")},1200);
+  });
+  document.addEventListener("click",e=>{ // 뒤로 돌아오면 다시 선택할 수 있게 되돌린다
+    if(e.target.closest('[data-go="verification"]')){btn.disabled=!form.verification.value;btn.textContent=form.verification.value?`${names[form.verification.value]}으로 계속하기`:"인증 방법을 선택해 주세요"}
+  });
+})();
+function fillVerified(){const v=S.verified||DEMO;$("#f-name").value=v.name;$("#f-phone").value=v.phone;check()}
+
+/* ===== 3. 정보 입력 ===== */
+const RE={id:/^(?=.*[a-z])[a-z0-9]{6,20}$/,nick:/^[가-힣A-Za-z0-9]{2,10}$/,email:/^[a-z0-9._%+-]+@[a-z0-9-]+(\.[a-z0-9-]+)+$/,ref:/^(?=.*[a-z])[a-z0-9]{6,20}$/};
+const ICON={ok:"✓",err:"!",info:"i",wait:"…"};
+function setMsg(el,kind,text){el.className="msg"+(kind==="ok"||kind==="err"?" "+kind:"");el.textContent=text?`${ICON[kind]||""} ${text}`:""}
+
+/* 확인 버튼이 있는 입력칸. 값이 바뀌면 확인을 무효화하고, 늦게 온 응답은 버린다. */
+function checker({input,btn,msg,test,badMsg,hint,run,normalize,onChange,label="중복확인"}){
+  const c={checked:"",result:null,tok:0};
+  const sync=()=>{
+    const v=input.value;
+    btn.disabled=!v||c.checked===v;btn.classList.toggle("done",c.checked===v&&!!v);
+    btn.textContent=c.checked===v&&v?"확인 완료":label;
+    input.classList.toggle("ok",c.checked===v&&!!v);
+  };
+  input.addEventListener("input",()=>{
+    if(normalize){const n=normalize(input.value);if(n!==input.value)input.value=n}
+    const v=input.value;
+    if(c.checked!==v){c.checked="";c.result=null;c.tok++}
+    input.classList.remove("err");
+    setMsg(msg,"info",!v?hint:test(v)?`${label}을 눌러 주세요.`:badMsg);
+    if(v&&!test(v)){msg.className="msg";}
+    sync();onChange&&onChange();
+  });
+  input.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();if(!btn.disabled)btn.click()}});
+  btn.addEventListener("click",async()=>{
+    const v=input.value;
+    if(!test(v)){setMsg(msg,"err",badMsg);input.classList.add("err");return}
+    const tok=++c.tok;btn.disabled=true;btn.textContent="확인 중";setMsg(msg,"wait","확인하고 있어요.");
+    try{
+      const r=await run(v);
+      if(tok!==c.tok||input.value!==v)return; // 확인 중에 값이 바뀌었으면 버린다
+      setMsg(msg,r.kind,r.text);
+      if(r.ok){c.checked=v;c.result=r.data||null}else input.classList.add("err");
+    }catch(e){if(tok===c.tok){setMsg(msg,"err",e.message||"잠시 후 다시 시도해 주세요.")}}
+    sync();onChange&&onChange();
+  });
+  c.sync=sync;c.reset=()=>{input.value="";c.checked="";c.result=null;c.tok++;setMsg(msg,"info",hint);sync()};
+  setMsg(msg,"info",hint);if(!hint)msg.textContent="";
+  return c;
 }
 
-</script>
-<script>
-(function(){
-// 통합회원 가입만 다음 화면으로 이동. 나머지는 프로토타입 안내.
-document.querySelectorAll("[data-method]").forEach((btn) =>
-  btn.addEventListener("click", () =>
-    showToast(`${btn.dataset.method}은 프로토타입에서 준비 중이에요.`)
-  )
-);
-
-const form = document.querySelector("#verification-form");
-const button = document.querySelector("#continue-button");
-const names = { phone: "휴대폰 인증", certificate: "신한인증서", card: "카드 인증" };
-
-form.addEventListener("change", (e) => {
-  button.disabled = false;
-  button.textContent = `${names[e.target.value]}으로 계속하기`;
+const EMAIL_TEXT={
+  available:{ok:true,kind:"ok",text:"사용할 수 있는 이메일이에요."},
+  unavailable:{ok:false,kind:"err",text:"현재 이 이메일로 가입할 수 없어요. 다른 이메일을 사용해 주세요."}
+};
+const email=checker({
+  input:$("#f-email"),btn:$("#b-email"),msg:$("#m-email"),label:"이메일 확인",hint:"",
+  test:v=>RE.email.test(v)&&v.length<=254,badMsg:"올바른 이메일 형식으로 입력해 주세요.",
+  normalize:v=>v.trim().toLowerCase(),onChange:()=>check(),
+  // 실서비스에서는 이메일 소유 확인 전에 탈퇴 이력을 노출하지 않도록 정책을 검토한다.
+  run:async v=>{
+    const r=await api.email(v,S.verified?S.verified.phone:"");
+    if(r.status==="returning")return{ok:true,kind:"ok",data:r,text:"이전에 가입한 이메일이에요. 탈퇴 후 30일 이내라 기존 회원으로 다시 시작해요."};
+    if(r.status==="rejoin_new")return{ok:true,kind:"ok",data:r,text:r.reason==="expired"?"탈퇴 후 30일이 지나 새 회원으로 가입해요.":"이전에 사용한 이메일이에요. 새 회원으로 가입할 수 있어요."};
+    return{...(EMAIL_TEXT[r.status]||EMAIL_TEXT.unavailable),data:r};
+  }
+});
+const uid=checker({
+  input:$("#f-id"),btn:$("#b-id"),msg:$("#m-id"),hint:"",test:v=>RE.id.test(v),
+  badMsg:"영문 소문자를 포함해 영문, 숫자 6~20자로 입력해 주세요.",
+  normalize:v=>v.toLowerCase().replace(/[^a-z0-9]/g,""),onChange:()=>check(),
+  run:async v=>(await api.id(v))?{ok:true,kind:"ok",text:"사용할 수 있는 아이디예요."}:{ok:false,kind:"err",text:"이미 사용 중인 아이디예요."}
+});
+const nick=checker({
+  input:$("#f-nick"),btn:$("#b-nick"),msg:$("#m-nick"),hint:"",test:v=>RE.nick.test(v),
+  badMsg:"한글, 영문, 숫자 2~10자로 입력해 주세요.",normalize:v=>v.replace(/[^가-힣A-Za-z0-9]/g,""),onChange:()=>check(),
+  run:async v=>(await api.nick(v))?{ok:true,kind:"ok",text:"사용할 수 있는 닉네임이에요."}:{ok:false,kind:"err",text:"이미 사용 중인 닉네임이에요."}
 });
 
-form.addEventListener("submit", (e) => {
-  e.preventDefault();
-  const picked = form.verification.value;
-  if (!picked) return;
-  // 실제 인증이 아닌 시연용 이동
-  button.disabled = true;
-  showToast(`${names[picked]} 선택 완료. 실제 인증 없이 다음 화면으로 이동해요.`);
-  setTimeout(() => go("info"), 1500);
+/* 비밀번호 */
+const PW=["len","lower","upper","num","sym","sp"];
+const pwTest=p=>({len:p.length>=8&&p.length<=20,lower:/[a-z]/.test(p),upper:/[A-Z]/.test(p),num:/[0-9]/.test(p),sym:/[^A-Za-z0-9\s]/.test(p),sp:p.length>0&&!/\s/.test(p)});
+const pwOk=p=>Object.values(pwTest(p)).every(Boolean);
+function renderPw(){
+  const t=pwTest($("#f-pw").value);PW.forEach(k=>$(`#rules [data-r=${k}]`).classList.toggle("on",t[k]));
+  const p=$("#f-pw").value,q=$("#f-pw2").value,m=$("#m-pw2");
+  // 확실히 틀렸을 때만 오류: 입력 중(앞부분이 같음)에는 조용히 둔다
+  if(!q){setMsg(m,"info","")}
+  else if(q===p)setMsg(m,"ok","비밀번호가 일치해요.");
+  else if(!p.startsWith(q)||q.length>p.length)setMsg(m,"err","비밀번호가 일치하지 않아요.");
+  else setMsg(m,"info","");
+  $("#f-pw2").classList.toggle("err",!!q&&q!==p&&(!p.startsWith(q)||q.length>p.length));
+  check();
+}
+$("#f-pw").addEventListener("input",renderPw);$("#f-pw2").addEventListener("input",renderPw);
+$$("[data-eye]").forEach(b=>b.addEventListener("click",()=>{
+  const i=document.getElementById(b.dataset.eye),h=i.type==="password";i.type=h?"text":"password";b.textContent=h?"숨기기":"보기";
+}));
+
+/* 주소 (선택) */
+$("#f-zip").addEventListener("input",e=>{e.target.value=e.target.value.replace(/\D/g,"").slice(0,5);check()});
+$("#f-a1").addEventListener("input",check);$("#f-a2").addEventListener("input",check);
+$("#b-zip").addEventListener("click",()=>{
+  if(!window.daum||!daum.Postcode){setMsg($("#m-addr"),"err","주소 검색을 불러오지 못했어요. 직접 입력해 주세요.");return}
+  new daum.Postcode({oncomplete:d=>{$("#f-zip").value=d.zonecode;$("#f-a1").value=d.roadAddress||d.address;$("#f-a2").focus();check()}}).open();
+});
+const addrOf=()=>{
+  const z=$("#f-zip").value,a1=$("#f-a1").value.trim(),a2=$("#f-a2").value.trim();
+  return z||a1||a2?{zipcode:z,address1:a1,address2:a2}:null;
+};
+const addrOk=()=>{const a=addrOf();return !a||(/^\d{5}$/.test(a.zipcode)&&!!a.address1)};
+
+/* 다음 버튼 조건과 남은 항목 안내 */
+function missing(){
+  const m=[];
+  if(!(email.checked&&email.checked===$("#f-email").value))m.push("이메일 확인");
+  if(!(uid.checked&&uid.checked===$("#f-id").value))m.push("아이디 중복확인");
+  if(!pwOk($("#f-pw").value))m.push("비밀번호 규칙");
+  else if($("#f-pw").value!==$("#f-pw2").value)m.push("비밀번호 확인");
+  if(!(nick.checked&&nick.checked===$("#f-nick").value))m.push("닉네임 중복확인");
+  if(!addrOk())m.push("주소(우편번호 5자리·기본 주소)");
+  return m;
+}
+function check(){
+  const m=missing(),ok=!m.length;
+  $("#info-next").disabled=!ok;
+  $("#info-hint").textContent=ok?"모두 입력했어요.":`남은 항목: ${m.join(" · ")}`;
+}
+$("#info-next").addEventListener("click",()=>{
+  if(missing().length)return;
+  const v=S.verified||DEMO,r=email.result;
+  S.info={userId:$("#f-id").value,password:$("#f-pw").value,nickname:$("#f-nick").value,name:v.name,phone:v.phone,
+    email:$("#f-email").value,address:addrOf(),memberHint:r&&r.status==="returning"?"returning":"new"};
+  go("consent");renderConsent();
 });
 
-})();
-</script>
-<script>
-/*
- * 정보입력 화면 (information 브랜치)
- * 다른 화면과 연결하는 방법은 information/README.md 참고.
- */
-(function () {
-  'use strict';
-
-  /* ===== 다른 화면/서버와 연결할 때 바꾸는 부분 ===== */
-  var config = {
-    // 아이디 중복확인. true = 사용 가능
-    checkIdAvailable: function (id) {
-      return SignupAPI.ready.then(function (on) {
-        if (on) return SignupAPI.call('/api/users/check-id?userId=' + encodeURIComponent(id))
-          .then(function (d) { return d.available; });
-        return mockCheckId(id);
-      });
-    },
-    // 닉네임 중복확인. true = 사용 가능
-    checkNicknameAvailable: function (nick) {
-      return SignupAPI.ready.then(function (on) {
-        if (on) return SignupAPI.call('/api/users/check-nickname?nickname=' + encodeURIComponent(nick))
-          .then(function (d) { return d.available; });
-        return mockCheckNickname(nick);
-      });
-    },
-    /*
-     * 이메일 가입 가능 여부. 본인인증한 휴대폰을 같이 보내 탈퇴 회원 본인인지 확인한다.
-     * resolve 값 { status, daysLeft?, reason? }:
-     *   'available'   신규 이메일
-     *   'returning'   탈퇴한 이메일 + 같은 휴대폰 + 탈퇴 후 30일 이내 → 기존 회원으로 복귀
-     *   'rejoin_new'  탈퇴한 이메일이지만 30일이 지났거나(reason: 'expired') 본인이 아님 → 신규 회원
-     *   'unavailable' 가입 제한 또는 이미 가입됨 (사유는 구분하지 않음)
-     * (실제 서비스에서는 이메일 소유 확인 전에 탈퇴 이력을 노출하지 않도록 정책 검토 필요)
-     */
-    checkEmail: function (email, phone) {
-      return SignupAPI.ready.then(function (on) {
-        if (on) return SignupAPI.call('/api/email/check', { email: email, phone: phone });
-        return mockCheckEmail(email);
-      });
-    },
-    // 다음 단계 주소. 비워두면 이동하지 않고 이벤트만 보낸다.
-    nextUrl: '',
-    // 본인인증 값이 없을 때 보여줄 예시 (화면 확인용)
-    demoVerified: { name: '김신세', phone: '010-1234-5678' }
-  };
-
-  /*
-   * ===== 서버 없이(index.html 만) 열었을 때 쓰는 모의 응답 =====
-   * 실제 탈퇴 이력/가입 제한을 조회하는 코드가 아니다.
-   * 이메일 모의 규칙: 아이디가 rejoin 으로 시작 → 30일 이내 복귀, old 로 시작 → 30일 지나 신규,
-   *                   blocked 로 시작 → 가입 제한, 그 외 → 신규.
-   */
-  function mockCheckId(id) {
-    var taken = ['admin', 'shinsegae', 'test1234', 'gudals4360', 'friend1234'];
-    return new Promise(function (resolve) {
-      setTimeout(function () { resolve(taken.indexOf(id) === -1); }, 300);
-    });
-  }
-  function mockCheckNickname(nick) {
-    var taken = ['관리자', '운영자', 'admin', '신세계', '친구'];
-    return new Promise(function (resolve) {
-      setTimeout(function () { resolve(taken.indexOf(nick.toLowerCase()) === -1); }, 300);
-    });
-  }
-  function mockCheckEmail(email) {
-    return new Promise(function (resolve) {
-      setTimeout(function () {
-        var id = email.split('@')[0].toLowerCase();
-        resolve(id.indexOf('rejoin') === 0 ? { status: 'returning', daysLeft: 20 }
-          : id.indexOf('old') === 0 ? { status: 'rejoin_new', reason: 'expired' }
-          : id.indexOf('blocked') === 0 ? { status: 'unavailable' } : { status: 'available' });
-      }, 700);
-    });
-  }
-
-  var $ = function (id) { return document.getElementById(id); };
-  var form = $('siForm');
-
-  var state = {
-    idChecked: false,     // 중복확인 통과한 아이디
-    checkedId: '',
-    checkedNick: '',      // 중복확인 통과한 닉네임
-    social: null,         // 간편가입이면 { ticket, provider, providerName, email, nickname }
-    pwTouched: false,
-    pw2Touched: false,
-    addrSelected: false
-  };
-
-  /* ---------- 아이콘 ---------- */
-  var ICON = {
-    eye: '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 10S5 3.5 10 3.5 18.5 10 18.5 10 15 16.5 10 16.5 1.5 10 1.5 10z"/><circle cx="10" cy="10" r="2.5"/></svg>',
-    eyeOff: '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.2 3.7A8 8 0 0 1 10 3.5c5 0 8.5 6.5 8.5 6.5a14 14 0 0 1-2.2 2.9M5.4 5.4C3 7 1.5 10 1.5 10s3.5 6.5 8.5 6.5a8 8 0 0 0 4.6-1.4M2 2l16 16"/></svg>',
-    check: '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5l2.8 2.8L11 4.5"/></svg>',
-    alert: '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="7" cy="7" r="6"/><path d="M7 4v3.5M7 10h0"/></svg>'
-  };
-
-  function setMsg(el, type, text) {
-    if (!text) { el.hidden = true; el.textContent = ''; el.className = 'si-msg'; return; }
-    el.hidden = false;
-    el.className = 'si-msg is-' + type;
-    el.innerHTML = (type === 'success' ? ICON.check : type === 'error' ? ICON.alert : '') +
-      '<span></span>';
-    el.lastChild.textContent = text;
-  }
-  function setFieldError(name, on) {
-    var f = form.querySelector('[data-field="' + name + '"]');
-    if (f) f.classList.toggle('is-error', !!on);
-  }
-  function toast(text) {
-    var t = $('siToast');
-    t.textContent = text;
-    t.classList.add('is-show');
-    clearTimeout(toast._t);
-    toast._t = setTimeout(function () { t.classList.remove('is-show'); }, 2200);
-  }
-
-  /* ---------- 본인인증 값 받기 ---------- */
-  function loadVerified() {
-    var v = null;
-    var q = new URLSearchParams(location.search);
-    if (q.get('name') || q.get('phone')) v = { name: q.get('name') || '', phone: q.get('phone') || '' };
-    if (!v) { try { v = JSON.parse(sessionStorage.getItem('shin_verified') || 'null'); } catch (e) {} }
-    if (!v) v = config.demoVerified;
-    setVerified(v);
-  }
-  function formatPhone(p) {
-    var d = String(p || '').replace(/\D/g, '');
-    if (d.length === 11) return d.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
-    if (d.length === 10) return d.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
-    return p || '';
-  }
-  function setVerified(v) {
-    $('siName').value = (v && v.name) || '';
-    $('siPhone').value = formatPhone(v && v.phone);
-    updateSubmit();
-  }
-
-  /* ---------- 아이디 ---------- */
-  var idInput = $('siUserId'), idBtn = $('siIdCheck'), idMsg = $('siUserIdMsg');
-  function idFormatOk(v) { return /^(?=.*[a-z])[a-z0-9]{6,20}$/.test(v); }
-
-  idInput.addEventListener('input', function () {
-    // 대문자는 소문자로, 영문·숫자 외 문자는 제거
-    var clean = idInput.value.toLowerCase().replace(/[^a-z0-9]/g, '');
-    if (clean !== idInput.value) idInput.value = clean;
-    if (state.checkedId !== clean) { state.idChecked = false; }
-    idBtn.disabled = !idFormatOk(clean);
-    if (!clean) { setMsg(idMsg); setFieldError('userId', false); }
-    else if (!idFormatOk(clean)) {
-      setMsg(idMsg, 'info', '영문 소문자를 포함해 영문, 숫자 6~20자로 입력해 주세요.');
-      setFieldError('userId', false);
-    } else if (!state.idChecked) {
-      setMsg(idMsg, 'info', '중복확인을 해 주세요.');
-      setFieldError('userId', false);
-    }
-    updateSubmit();
-  });
-  idInput.addEventListener('blur', function () {
-    var v = idInput.value;
-    if (v && !idFormatOk(v)) {
-      setMsg(idMsg, 'error', '영문 소문자를 포함해 영문, 숫자 6~20자로 입력해 주세요.');
-      setFieldError('userId', true);
-    }
-  });
-  idInput.addEventListener('keydown', function (e) {
-    if (e.key === 'Enter') { e.preventDefault(); if (!idBtn.disabled) idBtn.click(); }
-  });
-  idBtn.addEventListener('click', function () {
-    var v = idInput.value;
-    if (!idFormatOk(v)) return;
-    idBtn.disabled = true;
-    idBtn.textContent = '확인 중';
-    Promise.resolve(config.checkIdAvailable(v)).then(function (ok) {
-      if (idInput.value !== v) return; // 확인 중에 값이 바뀜
-      state.idChecked = ok; state.checkedId = ok ? v : '';
-      setMsg(idMsg, ok ? 'success' : 'error', ok ? '사용할 수 있는 아이디예요.' : '이미 사용 중인 아이디예요.');
-      setFieldError('userId', !ok);
-      updateSubmit();
-    }).catch(function () {
-      setMsg(idMsg, 'error', '잠시 후 다시 시도해 주세요.');
-    }).then(function () {
-      idBtn.textContent = '중복확인';
-      idBtn.disabled = !idFormatOk(idInput.value);
-    });
-  });
-
-  /* ---------- 비밀번호 ---------- */
-  var pw = $('siPw'), pw2 = $('siPw2'), pw2Msg = $('siPw2Msg');
-  // 비밀번호 규칙: 칠 때마다 항목별로 체크 표시
-  var PW_RULES = {
-    length:  function (v) { return v.length >= 8 && v.length <= 20; },
-    case:    function (v) { return /[a-z]/.test(v) && /[A-Z]/.test(v); }, // 대문자·소문자 모두 포함
-    digit:   function (v) { return /[0-9]/.test(v); },
-    special: function (v) { return /[^A-Za-z0-9\s]/.test(v); }
-  };
-  var ruleEls = Array.prototype.slice.call(form.querySelectorAll('[data-rule]'));
-  ruleEls.forEach(function (li) { li.setAttribute('data-text', li.textContent); });
-
-  function pwValid(v) {
-    if (/\s/.test(v)) return false;
-    return Object.keys(PW_RULES).every(function (k) { return PW_RULES[k](v); });
-  }
-
-  function validatePw() {
-    var v = pw.value;
-    var showBad = state.pwTouched && v.length > 0;
-    ruleEls.forEach(function (li) {
-      var ok = v.length > 0 && PW_RULES[li.getAttribute('data-rule')](v);
-      li.classList.toggle('is-ok', ok);
-      li.classList.toggle('is-bad', !ok && showBad);
-      li.innerHTML = ICON.check + '<span></span>';
-      li.lastChild.textContent = li.getAttribute('data-text');
-    });
-    setFieldError('password', showBad && !pwValid(v));
-  }
-
-  /*
-   * 비밀번호 확인:
-   *  - 두 값이 같으면 "일치하지 않음"이 절대 뜨지 않는다.
-   *  - 아직 다 치지 않은 중간 상태(입력값이 원래 비밀번호의 앞부분)에서는 오류를 띄우지 않는다.
-   *  - 확인칸을 벗어났는데 다르거나, 길이를 넘겨서 확실히 다를 때만 오류.
-   *  - 비밀번호 칸을 나중에 고쳐도 다시 비교한다.
-   */
-  function validatePw2() {
-    var a = pw.value, b = pw2.value;
-    if (!b) { setMsg(pw2Msg); setFieldError('passwordConfirm', false); return; }
-    if (a === b) {
-      setMsg(pw2Msg, 'success', '비밀번호가 일치해요.');
-      setFieldError('passwordConfirm', false);
-      return;
-    }
-    var stillTyping = a.indexOf(b) === 0 && !state.pw2Touched;
-    if (stillTyping) { setMsg(pw2Msg); setFieldError('passwordConfirm', false); return; }
-    setMsg(pw2Msg, 'error', '비밀번호가 일치하지 않아요.');
-    setFieldError('passwordConfirm', true);
-  }
-
-  pw.addEventListener('input', function () { validatePw(); validatePw2(); updateSubmit(); });
-  pw.addEventListener('blur', function () { if (pw.value) state.pwTouched = true; validatePw(); });
-  pw2.addEventListener('input', function () { validatePw2(); updateSubmit(); });
-  pw2.addEventListener('blur', function () { if (pw2.value) state.pw2Touched = true; validatePw2(); });
-  pw2.addEventListener('focus', function () { state.pw2Touched = false; validatePw2(); });
-
-  Array.prototype.forEach.call(document.querySelectorAll('[data-toggle-pw]'), function (btn) {
-    var input = $(btn.getAttribute('data-toggle-pw'));
-    btn.innerHTML = ICON.eye;
-    btn.addEventListener('mousedown', function (e) { e.preventDefault(); }); // 포커스 유지
-    btn.addEventListener('click', function () {
-      var show = input.type === 'password';
-      input.type = show ? 'text' : 'password';
-      btn.innerHTML = show ? ICON.eyeOff : ICON.eye;
-      btn.setAttribute('aria-label', show ? '비밀번호 숨기기' : '비밀번호 보기');
-    });
-  });
-
-  /* ---------- 닉네임 ---------- */
-  var nickInput = $('siNick'), nickBtn = $('siNickCheck'), nickMsg = $('siNickMsg');
-  var NICK_RULE = '한글, 영문, 숫자 2~10자로 입력해 주세요.';
-  function nickValue() { return nickInput.value.trim(); }
-  function nickFormatOk(v) { return /^[가-힣A-Za-z0-9]{2,10}$/.test(v); }
-
-  // 한글 조합 중에 글자를 지우면 입력이 깨지므로 정리하지 않고 검사만 한다
-  nickInput.addEventListener('input', function () {
-    var v = nickValue();
-    if (state.checkedNick !== v) state.checkedNick = '';
-    nickBtn.disabled = !nickFormatOk(v);
-    setFieldError('nickname', false);
-    if (!v) setMsg(nickMsg);
-    else if (!nickFormatOk(v)) setMsg(nickMsg, 'info', NICK_RULE);
-    else if (!state.checkedNick) setMsg(nickMsg, 'info', '중복확인을 해 주세요.');
-    updateSubmit();
-  });
-  nickInput.addEventListener('blur', function () {
-    var v = nickValue();
-    if (v && !nickFormatOk(v)) { setMsg(nickMsg, 'error', NICK_RULE); setFieldError('nickname', true); }
-  });
-  nickInput.addEventListener('keydown', function (e) {
-    if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); if (!nickBtn.disabled) nickBtn.click(); }
-  });
-  nickBtn.addEventListener('click', function () {
-    var v = nickValue();
-    if (!nickFormatOk(v)) return;
-    nickBtn.disabled = true;
-    nickBtn.textContent = '확인 중';
-    Promise.resolve(config.checkNicknameAvailable(v)).then(function (ok) {
-      if (nickValue() !== v) return; // 확인 중에 값이 바뀜
-      state.checkedNick = ok ? v : '';
-      setMsg(nickMsg, ok ? 'success' : 'error', ok ? '사용할 수 있는 닉네임이에요.' : '이미 사용 중인 닉네임이에요.');
-      setFieldError('nickname', !ok);
-      updateSubmit();
-    }).catch(function () {
-      setMsg(nickMsg, 'error', '잠시 후 다시 시도해 주세요.');
-    }).then(function () {
-      nickBtn.textContent = '중복확인';
-      nickBtn.disabled = !nickFormatOk(nickValue());
-    });
-  });
-
-  /* ---------- 이메일 ---------- */
-  var emailId = $('siEmailId'), dSel = $('siDomainSelect'), dInput = $('siDomainInput'),
-      dReset = $('siDomainReset'), emailMsg = $('siEmailMsg'), emailBtn = $('siEmailCheck');
-  var emailTouched = false;
-
-  // 이메일 확인 상태 (아이디·비밀번호 확인과 별개로, 확인이 끝나야 다음 단계로 진행)
-  var emailStatus = {
-    IDLE: 'idle',
-    INVALID: 'invalid',
-    CHECKING: 'checking',
-    AVAILABLE: 'available',
-    RETURNING: 'returning',
-    REJOIN_NEW: 'rejoin_new',
-    UNAVAILABLE: 'unavailable'
-  };
-  var emailState = { status: emailStatus.IDLE, checked: '', token: 0, failed: false, result: null };
-
-  function domainValue() { return dInput.hidden ? dSel.value : dInput.value.trim().toLowerCase(); }
-  function showDirect(on, value) {
-    dSel.hidden = on; dInput.hidden = !on; dReset.hidden = !on;
-    if (on) { dInput.value = value || ''; dInput.focus(); }
-    else { dSel.value = ''; dSel.classList.add('is-placeholder'); }
-  }
-  function emailValue() {
-    var id = emailId.value.trim(), d = domainValue();
-    return id && d ? id + '@' + d : '';
-  }
-  function emailValid() {
-    return /^[A-Za-z0-9._%+-]+$/.test(emailId.value.trim()) &&
-           /^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(domainValue() || '');
-  }
-  // 확인이 끝난 이메일(신규, 복귀, 탈퇴 후 신규)만 다음 단계로 보낸다
-  function emailOk() {
-    return [emailStatus.AVAILABLE, emailStatus.RETURNING, emailStatus.REJOIN_NEW].indexOf(emailState.status) > -1 &&
-           emailState.checked === emailValue();
-  }
-
-  // 상태별 UI: 메시지(아이콘+문구) / 입력창 오류 테두리 / 확인 버튼
-  function renderEmail() {
-    var st = emailState.status, valid = emailValid(), id = emailId.value.trim();
-    var btnLabel = '이메일 확인', btnOff = !valid, loading = false, done = false;
-
-    if (st === emailStatus.CHECKING) {
-      setMsg(emailMsg, 'info', '이메일을 확인하고 있어요.'); setFieldError('email', false);
-      btnLabel = '확인 중'; btnOff = true; loading = true;
-    } else if (st === emailStatus.AVAILABLE) {
-      setMsg(emailMsg, 'success', '사용할 수 있는 이메일이에요.'); setFieldError('email', false);
-      btnLabel = '확인 완료'; btnOff = true; done = true;
-    } else if (st === emailStatus.RETURNING || st === emailStatus.REJOIN_NEW) {
-      // 탈퇴한 이메일: 가입은 할 수 있으므로 오류가 아니라 성공(초록·체크)으로 안내하고,
-      // 본인인증한 휴대폰 기준으로 복귀(30일 이내)인지 신규인지 함께 알려 준다
-      var r = emailState.result || {};
-      var text = st === emailStatus.RETURNING
-        ? '탈퇴한 이메일이에요. 탈퇴 후 30일이 지나지 않아 기존 회원으로 복귀해요.' + (r.daysLeft ? ' (복귀 가능 ' + r.daysLeft + '일 남음)' : '')
-        : r.reason === 'expired'
-          ? '탈퇴한 이메일이에요. 탈퇴 후 30일이 지나 신규 회원으로 가입해요.'
-          : '탈퇴한 이메일이에요. 신규 회원으로 가입해요.';
-      setMsg(emailMsg, 'success', text); setFieldError('email', false);
-      btnLabel = '확인 완료'; btnOff = true; done = true;
-    } else if (st === emailStatus.UNAVAILABLE) {
-      setMsg(emailMsg, 'error', '현재 이 이메일로 가입할 수 없어요. 다른 이메일을 사용해 주세요.'); setFieldError('email', true);
-      btnLabel = '다시 입력'; btnOff = false;   // 다른 이메일 입력 경로
-    } else if (st === emailStatus.INVALID) {
-      var text = !id ? '이메일 아이디를 입력해 주세요.' : !domainValue() ? '도메인을 선택해 주세요.' : '올바른 이메일 형식으로 입력해 주세요.';
-      setMsg(emailMsg, 'error', text); setFieldError('email', true);
-    } else if (emailState.failed) {
-      setMsg(emailMsg, 'error', '이메일을 확인하지 못했어요. 잠시 후 다시 시도해 주세요.'); setFieldError('email', false);
-    } else {
-      setMsg(emailMsg, 'info', valid ? '이메일 확인을 눌러 주세요.' : '이메일을 입력해 주세요.'); setFieldError('email', false);
-    }
-    emailBtn.disabled = btnOff;
-    emailBtn.textContent = btnLabel;
-    emailBtn.classList.toggle('is-loading', loading);
-    emailBtn.classList.toggle('is-done', done);
-    emailBtn.setAttribute('aria-busy', loading ? 'true' : 'false');
-  }
-
-  // valueChanged=true: 입력이 바뀐 것 → 이전 확인 결과를 지우고 진행 중인 확인은 무시
-  function syncEmail(valueChanged) {
-    if (valueChanged) {
-      emailState.token++; emailState.checked = ''; emailState.failed = false; emailState.status = emailStatus.IDLE;
-    }
-    if (emailState.status === emailStatus.IDLE || emailState.status === emailStatus.INVALID) {
-      var hasAny = emailId.value.trim() || domainValue();
-      emailState.status = (!emailValid() && emailTouched && hasAny) ? emailStatus.INVALID : emailStatus.IDLE;
-    }
-    renderEmail(); updateSubmit();
-  }
-
-  emailId.addEventListener('input', function () {
-    // "abc@naver.com"을 통째로 붙여넣거나 쳐도 자동으로 나눔
-    var v = emailId.value;
-    var at = v.indexOf('@');
-    if (at > -1) {
-      var id = v.slice(0, at), d = v.slice(at + 1).trim().toLowerCase();
-      emailId.value = id;
-      if (d) {
-        var opt = Array.prototype.find.call(dSel.options, function (o) { return o.value === d; });
-        if (opt) { showDirect(false); dSel.value = d; dSel.classList.remove('is-placeholder'); }
-        else showDirect(true, d);
-      } else if (dSel.hidden === false) { dSel.focus(); }
-    }
-    syncEmail(true);
-  });
-  emailId.addEventListener('blur', function () { if (emailId.value) emailTouched = true; syncEmail(false); });
-  dSel.addEventListener('change', function () {
-    if (dSel.value === '__direct') { showDirect(true); }
-    else dSel.classList.toggle('is-placeholder', !dSel.value);
-    emailTouched = true; syncEmail(true);
-  });
-  dInput.addEventListener('input', function () { syncEmail(true); });
-  dInput.addEventListener('blur', function () { emailTouched = true; syncEmail(false); });
-  dReset.addEventListener('click', function () { showDirect(false); dSel.focus(); syncEmail(true); });
-
-  emailBtn.addEventListener('click', function () {
-    // 가입 제한이면 버튼이 "다시 입력"으로 바뀌어 다른 이메일 입력으로 돌아간다
-    if (emailState.status === emailStatus.UNAVAILABLE) {
-      emailId.value = ''; showDirect(false); emailTouched = false;
-      syncEmail(true); emailId.focus();
-      return;
-    }
-    // 중복 클릭 방지: 확인 중이거나 형식이 틀리면 요청하지 않는다
-    if (emailState.status === emailStatus.CHECKING || !emailValid()) return;
-    var email = emailValue(), token = ++emailState.token;
-    emailState.status = emailStatus.CHECKING; emailState.failed = false;
-    renderEmail(); updateSubmit();
-    config.checkEmail(email, $('siPhone').value).then(function (result) {
-      if (token !== emailState.token) return;      // 확인하는 사이 이메일을 고쳤으면 결과 무시
-      result = result || {};
-      emailState.status = emailStatus[String(result.status).toUpperCase()] || emailStatus.AVAILABLE;
-      emailState.result = result;
-      emailState.checked = email;
-      renderEmail(); updateSubmit();
-    }, function () {
-      if (token !== emailState.token) return;
-      emailState.status = emailStatus.IDLE; emailState.failed = true;
-      renderEmail(); updateSubmit();
-    });
-  });
-
-  /* ---------- 주소 ---------- */
-  var zip = $('siZip'), addrBtn = $('siAddrSearch'), addrExtra = $('siAddrExtra'),
-      addr1 = $('siAddr1'), addr2 = $('siAddr2'), addrMsg = $('siAddrMsg'),
-      layer = $('siAddrLayer'), layerBody = $('siAddrBody');
-
-  function clearAddress() {
-    state.addrSelected = false;
-    addr1.value = ''; addr2.value = '';
-    addrExtra.hidden = true;
-    zip.removeAttribute('data-zonecode');
-    setMsg(addrMsg, 'info', '우편번호 5자리나 도로명·지번·건물명으로 검색할 수 있어요.');
-    updateSubmit();
-  }
-  zip.addEventListener('input', function () {
-    if (state.addrSelected) clearAddress();
-    // 숫자만 친 경우 5자리 넘지 않게
-    if (/^\d+$/.test(zip.value) && zip.value.length > 5) zip.value = zip.value.slice(0, 5);
-    // 우편번호 5자리를 다 치면 바로 검색창이 열림
-    if (/^\d{5}$/.test(zip.value)) openPostcode(zip.value);
-  });
-  zip.addEventListener('keydown', function (e) {
-    if (e.key === 'Enter') { e.preventDefault(); openPostcode(zip.value.trim()); }
-  });
-  addrBtn.addEventListener('click', function () {
-    openPostcode(state.addrSelected ? '' : zip.value.trim());
-  });
-
-  function onAddressPicked(data) {
-    var base = data.roadAddress || data.jibunAddress || data.address;
-    var extra = '';
-    if (data.userSelectedType === 'R' || data.roadAddress) {
-      if (data.bname && /[동로가]$/.test(data.bname)) extra += data.bname;
-      if (data.buildingName && data.apartment === 'Y') extra += (extra ? ', ' : '') + data.buildingName;
-    }
-    if (extra) base += ' (' + extra + ')';
-    zip.value = data.zonecode;
-    zip.setAttribute('data-zonecode', data.zonecode);
-    addr1.value = base;
-    addrExtra.hidden = false;
-    addr1.style.height = 'auto'; addr1.style.height = addr1.scrollHeight + 2 + 'px';
-    state.addrSelected = true;
-    setMsg(addrMsg);
-    closeLayer();
-    addr2.focus();
-    updateSubmit();
-  }
-
-  function openPostcode(query) {
-    layer.hidden = false;
-    document.body.style.overflow = 'hidden';
-    layerBody.innerHTML = '';
-    var tryOpen = function (tries) {
-      if (window.daum && daum.Postcode) {
-        var box = document.createElement('div');
-        layerBody.appendChild(box);
-        new daum.Postcode({
-          oncomplete: onAddressPicked,
-          width: '100%', height: '100%',
-          animation: false,
-          autoClose: false
-        }).embed(box, { q: query || '', autoClose: false });
-      } else if (tries > 0) {
-        setTimeout(function () { tryOpen(tries - 1); }, 200);
-      } else {
-        layerBody.innerHTML = '<div class="si-fallback">주소 검색 서비스를 불러오지 못했어요.<br>네트워크 상태를 확인한 뒤 다시 시도해 주세요.</div>';
-      }
-    };
-    tryOpen(15);
-  }
-  function closeLayer() {
-    layer.hidden = true;
-    layerBody.innerHTML = '';
-    document.body.style.overflow = '';
-  }
-  $('siAddrClose').addEventListener('click', closeLayer);
-  layer.addEventListener('click', function (e) { if (e.target === layer) closeLayer(); });
-  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !layer.hidden) closeLayer(); });
-  addr2.addEventListener('input', updateSubmit);
-
-  /* ---------- 다음 버튼 ---------- */
-  function isComplete() {
-    // 간편가입은 아이디·비밀번호를 만들지 않는다
-    var account = state.social ||
-      (state.idChecked && state.checkedId === idInput.value && pwValid(pw.value) && pw.value === pw2.value);
-    return !!account &&
-      !!state.checkedNick && state.checkedNick === nickValue() &&
-      !!$('siName').value && !!$('siPhone').value &&
-      emailOk();
-    // 자택주소는 선택 항목이라 비워도 넘어갈 수 있음
-  }
-  function updateSubmit() { $('siSubmit').disabled = !isComplete(); }
-
-  function collect() {
-    var account = state.social ? { socialTicket: state.social.ticket }
-                               : { userId: idInput.value, password: pw.value };
-    return Object.assign(account, {
-      nickname: nickValue(),
-      name: $('siName').value,
-      phone: $('siPhone').value,
-      email: emailValue(),
-      // 주소를 고르지 않았으면 null
-      address: state.addrSelected ? {
-        zipcode: zip.getAttribute('data-zonecode') || zip.value,
-        address1: addr1.value,
-        address2: addr2.value.trim()
-      } : null
-    });
-  }
-
-  /* ---------- 간편가입 ---------- */
-  // 제공자에서 받은 이메일·닉네임을 채우고, 아이디·비밀번호 칸은 숨긴다 (null 이면 일반 가입으로 되돌림)
-  function setSocial(s) {
-    state.social = s || null;
-    ['userId', 'password', 'passwordConfirm'].forEach(function (f) {
-      form.querySelector('[data-field="' + f + '"]').hidden = !!s;
-    });
-    var box = $('siSocial');
-    box.hidden = !s;
-    if (s) {
-      box.textContent = s.providerName + ' 계정으로 가입해요. 아이디와 비밀번호는 만들지 않아요.';
-      if (s.nickname && !nickValue()) {
-        nickInput.value = s.nickname.replace(/[^가-힣A-Za-z0-9]/g, '').slice(0, 10);
-        nickInput.dispatchEvent(new Event('input'));
-      }
-      if (s.email && !emailId.value) {
-        // 이메일을 통째로 넣으면 아이디·도메인으로 자동 분리된다
-        emailId.value = s.email;
-        emailId.dispatchEvent(new Event('input'));
-        if (emailValid()) emailBtn.click();
-      }
-    }
-    updateSubmit();
-  }
-
-  form.addEventListener('submit', function (e) {
-    e.preventDefault();
-    if (!isComplete()) return;
-    var data = collect();
-
-    // 다음 화면에서 쓸 수 있도록 저장 (비밀번호는 저장하지 않음)
-    var safe = JSON.parse(JSON.stringify(data));
-    delete safe.password;
-    try { sessionStorage.setItem('shin_signup_info', JSON.stringify(safe)); } catch (err) {}
-
-    // 다른 사람이 만든 화면(약관 동의 등)은 이 이벤트를 받아서 이어가면 된다
-    // emailCheck: 복귀/신규 안내용 (서버 없이 열었을 때 완료 화면 문구에 쓴다. 서버는 가입 때 다시 계산)
-    document.dispatchEvent(new CustomEvent('shin:info-complete', {
-      detail: Object.assign({}, data, { emailCheck: emailState.result })
-    }));
-    if (window.parent !== window) {
-      window.parent.postMessage({ type: 'shin:info-complete', data: safe }, '*');
-    }
-
-    if (config.nextUrl) location.href = config.nextUrl;
-    else toast('정보입력이 완료됐어요.');
-  });
-
-  $('siBack').addEventListener('click', function () {
-    document.dispatchEvent(new CustomEvent('shin:info-back'));
-    if (history.length > 1) history.back();
-  });
-
-  /* ---------- 외부에서 쓰는 함수 ---------- */
-  window.ShinInfo = {
-    config: config,
-    setVerified: setVerified,
-    getData: collect,
-    isComplete: isComplete,
-    setSocial: setSocial
-  };
-
-  validatePw();
-  renderEmail();
-  loadVerified();
-})();
-
-</script>
-<script>
-(function(){
-const $=s=>document.querySelector(s);
-const SVC=["이마트","신세계백화점","신백멤버스","신세계아울렛","시코르","이마트에브리데이","신세계까사","스타필드","이마트24"];
-const REQ=[["terms","서비스 이용약관"],["privacy","개인정보 수집·이용 동의"],["age","만 14세 이상입니다"]];
-const CH=["이메일","문자","우편","전화"];
-const state={req:{terms:false,privacy:false,age:false},svc:Object.fromEntries(SVC.map(n=>[n,false])),
-  mk:{point:Object.fromEntries(CH.map(c=>[c,false])),duty:Object.fromEntries(CH.map(c=>[c,false])),night:false}};
+/* ===== 4. 약관 동의 ===== */
+const SERVICES=["이마트","신세계백화점","신백멤버스","신세계아울렛","시코르","이마트에브리데이","신세계까사","스타필드","이마트24"];
+const CHANNELS=["이메일","문자","우편","전화"];
+const C={req:{terms:false,privacy:false,age:false},svc:Object.fromEntries(SERVICES.map(s=>[s,false])),
+  mk:{point:Object.fromEntries(CHANNELS.map(c=>[c,false])),duty:Object.fromEntries(CHANNELS.map(c=>[c,false])),night:false}};
+$("#svc-list").innerHTML=SERVICES.map(s=>`<label><input type="checkbox" data-svc="${s}">${s}</label>`).join("");
+["point","duty"].forEach(g=>{$("#mk-"+g).innerHTML=CHANNELS.map(c=>`<label class="chip"><input type="checkbox" data-mk="${g}:${c}"><span>${c}</span></label>`).join("")});
 const vals=o=>Object.values(o);
-const reqAll=()=>vals(state.req).every(Boolean), svcAll=()=>vals(state.svc).every(Boolean);
-const mkAll=()=>CH.every(c=>state.mk.point[c]&&state.mk.duty[c])&&state.mk.night;
-const rw=(attr,on,label,cls="")=>`<button type="button" class="rw ${on?'on':''} ${cls}" ${attr} role="checkbox" aria-checked="${on}"><span class="ck"></span><span>${label}</span></button>`;
-const names=o=>({y:CH.filter(c=>o[c]),n:CH.filter(c=>!o[c])});
-const badge=y=>y?'<span class="badge y">동의</span>':'<span class="badge n">미동의</span>';
-
-function render(){
-  $("#reqList").innerHTML=REQ.map(([k,t])=>`<li>${rw(`data-req="${k}"`,state.req[k],`<i class="rq">(필수)</i> ${t}`)}<a class="vw" data-view role="button" tabindex="0">보기</a></li>`).join("");
-  const set=(id,on)=>{const e=$(id);e.classList.toggle("on",on);e.setAttribute("aria-checked",on)};
-  set("#allBtn",reqAll()&&svcAll()&&mkAll()); set("#svcAll",svcAll()); set("#mkAll",mkAll());
-  $("#svcSub").textContent=`${vals(state.svc).filter(Boolean).length}/9`;
-  $("#svcList").innerHTML=SVC.map(n=>`<li>${rw(`data-svc="${n}"`,state.svc[n],n)}</li>`).join("");
-  const cell=(g,c)=>`<span class="cell">${rw(`data-mk="${g}:${c}" aria-label="${g==='point'?'신세계포인트':'신세계면세점'} ${c}"`,state.mk[g][c],"")}</span>`;
-  $("#matrix").innerHTML=`<div class="mr h"><span>수신 방법</span><span>포인트</span><span>면세점</span></div>`+CH.map(c=>`<div class="mr"><span>${c}</span>${cell("point",c)}${cell("duty",c)}</div>`).join("")+
-    `<div class="mr"><span>야간(21~08시)</span><span></span><span class="cell">${rw('data-night aria-label="야간 수신"',state.mk.night,"")}</span></div>`;
-  const anyMk=CH.some(c=>state.mk.point[c]||state.mk.duty[c]);
-  $("#mkSum").hidden=!anyMk;
-  $("#mkSum").innerHTML=[["신세계포인트",state.mk.point],["신세계면세점",state.mk.duty]].map(([l,o])=>{const {y,n}=names(o);return `<div class="li" style="padding:4px 0"><span><b>${l}</b><small>${y.length?'동의 '+y.join('·'):'미동의'}${y.length&&n.length?' / 미동의 '+n.join('·'):''}</small></span></div>`}).join("");
-  const left=3-vals(state.req).filter(Boolean).length;
+function renderConsent(){
+  $$("[data-req]").forEach(i=>i.checked=C.req[i.dataset.req]);
+  $$("[data-svc]").forEach(i=>i.checked=C.svc[i.dataset.svc]);
+  $$("[data-mk]").forEach(i=>{const[g,c]=i.dataset.mk.split(":");i.checked=C.mk[g][c]});
+  $("#c-night").checked=C.mk.night;
+  const sc=vals(C.svc).filter(Boolean).length;
+  $("#svc-count").textContent=`${sc}/${SERVICES.length}`;
+  $("#c-svc-all").checked=sc===SERVICES.length;$("#c-svc-all").indeterminate=sc>0&&sc<SERVICES.length;
+  const all=vals(C.req).every(Boolean)&&sc===SERVICES.length&&["point","duty"].every(g=>vals(C.mk[g]).every(Boolean))&&C.mk.night;
+  $("#c-all").checked=all;
+  const left=vals(C.req).filter(v=>!v).length;
   $("#submit").disabled=left>0;
-  $("#submit").textContent=left>0?`필수 동의 ${left}개 남았어요`:signupResult?"변경 내용 저장":"동의하고 가입하기";
+  $("#consent-hint").textContent=left?`필수 동의 ${left}개가 남았어요.`:"";
 }
-function setAll(v){Object.keys(state.req).forEach(k=>state.req[k]=v);Object.keys(state.svc).forEach(k=>state.svc[k]=v);CH.forEach(c=>{state.mk.point[c]=v;state.mk.duty[c]=v});state.mk.night=v}
-
-document.addEventListener("click",e=>{
-  const t=e.target.closest("#v-consent [data-req],#v-consent [data-svc],#v-consent [data-mk],#v-consent [data-night],#allBtn,#svcAll,#mkAll,#v-consent [data-view],#v-consent [data-acc]");
-  if(!t)return;
-  if(t.hasAttribute("data-view")){alert("약관 전문 보기(프로토타입)");return}
-  if(t.dataset.acc){const body=document.getElementById(t.dataset.acc),open=body.hidden;body.hidden=!open;t.setAttribute("aria-expanded",open);return}
-  if(t.dataset.req)state.req[t.dataset.req]=!state.req[t.dataset.req];
-  else if(t.dataset.svc)state.svc[t.dataset.svc]=!state.svc[t.dataset.svc];
-  else if(t.dataset.mk){const[g,c]=t.dataset.mk.split(":");state.mk[g][c]=!state.mk[g][c]}
-  else if(t.hasAttribute("data-night"))state.mk.night=!state.mk.night;
-  else if(t.id==="allBtn")setAll(!(reqAll()&&svcAll()&&mkAll()));
-  else if(t.id==="svcAll"){const v=!svcAll();Object.keys(state.svc).forEach(k=>state.svc[k]=v)}
-  else if(t.id==="mkAll"){const v=!mkAll();CH.forEach(c=>{state.mk.point[c]=v;state.mk.duty[c]=v});state.mk.night=v}
-  render();
+$("#v-consent").addEventListener("change",e=>{
+  const t=e.target;
+  if(t.id==="c-all"){const v=t.checked;Object.keys(C.req).forEach(k=>C.req[k]=v);SERVICES.forEach(s=>C.svc[s]=v);["point","duty"].forEach(g=>CHANNELS.forEach(c=>C.mk[g][c]=v));C.mk.night=v}
+  else if(t.id==="c-svc-all")SERVICES.forEach(s=>C.svc[s]=t.checked);
+  else if(t.dataset.req)C.req[t.dataset.req]=t.checked;
+  else if(t.dataset.svc)C.svc[t.dataset.svc]=t.checked;
+  else if(t.dataset.mk){const[g,c]=t.dataset.mk.split(":");C.mk[g][c]=t.checked}
+  else if(t.id==="c-night")C.mk.night=t.checked;
+  renderConsent();
 });
+$("#svc-toggle").addEventListener("click",e=>{const l=$("#svc-list"),o=l.hidden;l.hidden=!o;e.target.textContent=o?"접기":"펼치기";e.target.setAttribute("aria-expanded",String(o))});
 
-// ===== 추천인 (선택) =====
-const ref={input:$("#refInput"),btn:$("#refBtn"),msg:$("#refMsg"),box:$("#refBox"),checked:""};
-const REF_RE=/^(?=.*[a-z])[a-z0-9]{6,20}$/, REF_INFO="추천해 준 회원이 있으면 아이디를 입력해 주세요.";
-function refMsg(type,text){ref.msg.className="ref-msg"+(type?" "+type:"");ref.msg.textContent=text;ref.box.classList.toggle("is-error",type==="err")}
-// 서버 없이 열었을 때는 friend1234 만 있는 회원으로 본다
-const checkReferrer=id=>SignupAPI.ready.then(on=>on
-  ?SignupAPI.call("/api/users/check-referrer?userId="+encodeURIComponent(id)).then(d=>d.exists)
-  :new Promise(r=>setTimeout(()=>r(id==="friend1234"),300)));
-// 비어 있거나 확인을 마쳤으면 true. 가입 버튼을 누를 때 확인 안 한 값이 있으면 여기서 확인한다
-async function verifyReferrer(){
-  const v=ref.input.value;
-  if(!v||ref.checked===v)return true;
-  if(!REF_RE.test(v)){refMsg("err","추천인 아이디를 확인해 주세요.");return false}
-  if(signupInfo&&v===signupInfo.userId){refMsg("err","본인 아이디는 추천인으로 입력할 수 없어요.");return false}
-  ref.btn.disabled=true;ref.btn.textContent="확인 중";
-  try{
-    const ok=await checkReferrer(v);
-    if(ref.input.value!==v)return false; // 확인 중에 값이 바뀜
-    ref.checked=ok?v:"";
-    ok?refMsg("ok","추천인을 확인했어요."):refMsg("err","추천인 아이디를 찾을 수 없어요. 다시 확인해 주세요.");
-    return ok;
-  }catch(e){refMsg("err","잠시 후 다시 시도해 주세요.");return false}
-  finally{ref.btn.textContent="확인";ref.btn.disabled=ref.input.readOnly||!ref.input.value||ref.checked===ref.input.value}
-}
-ref.input.addEventListener("input",()=>{
-  const c=ref.input.value.toLowerCase().replace(/[^a-z0-9]/g,"");
-  if(c!==ref.input.value)ref.input.value=c;
-  if(ref.checked!==c)ref.checked="";
-  ref.btn.disabled=!c;refMsg("",c?"확인을 눌러 주세요.":REF_INFO);
+/* 추천인 (선택, 가입할 때만) */
+const ref=checker({
+  input:$("#f-ref"),btn:$("#b-ref"),msg:$("#m-ref"),label:"확인",hint:"추천인이 있다면 입력해 주세요.",
+  test:v=>RE.ref.test(v),badMsg:"추천인 아이디를 확인해 주세요.",normalize:v=>v.toLowerCase().replace(/[^a-z0-9]/g,""),
+  run:async v=>{
+    if(S.info&&v===S.info.userId)return{ok:false,kind:"err",text:"본인 아이디는 추천인으로 입력할 수 없어요."};
+    return (await api.ref(v))?{ok:true,kind:"ok",text:"추천인을 확인했어요."}:{ok:false,kind:"err",text:"추천인 아이디를 찾을 수 없어요. 다시 확인해 주세요."};
+  }
 });
-ref.input.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();if(!ref.btn.disabled)ref.btn.click()}});
-ref.btn.addEventListener("click",verifyReferrer);
-// 추천인은 가입할 때만 넣는다. 가입 후 "동의 내용 수정"으로 돌아오면 고칠 수 없게 잠근다
-function lockReferrer(){
-  ref.input.readOnly=true;ref.btn.disabled=true;
-  if(ref.input.value)refMsg("","추천인은 가입할 때만 입력할 수 있어요.");else ref.box.hidden=true;
-}
-document.addEventListener("shin:consent-open",()=>{
-  if(!ref.input.readOnly)return; // 가입 전이면 입력한 값을 그대로 둔다
-  ref.input.readOnly=false;ref.box.hidden=false;ref.input.value="";ref.checked="";ref.btn.disabled=true;refMsg("",REF_INFO);
-});
+const refReady=()=>{const v=$("#f-ref").value;return !v||ref.checked===v};
 
+/* ===== 가입 · 동의 저장 ===== */
+const consentBody=()=>({required:{...C.req},services:{...C.svc},marketing:{point:{...C.mk.point},duty:{...C.mk.duty},night:C.mk.night}});
 $("#submit").addEventListener("click",async()=>{
   const btn=$("#submit");
-  if(!signupResult&&!(await verifyReferrer())){ref.input.focus();return}
-  if(await SignupAPI.ready){
-    if(!signupInfo){showToast("정보입력부터 진행해 주세요.");go("info");return}
-    const consents={required:state.req,services:state.svc,marketing:state.mk};
-    btn.disabled=true;btn.textContent=signupResult?"저장 중":"가입 처리 중";
+  if(!S.result&&!refReady()){setMsg($("#m-ref"),"err","추천인 확인을 눌러 주세요. 비워 두면 추천인 없이 가입해요.");$("#f-ref").focus();return}
+  const live=await API.ready;
+  if(live){
+    if(!S.info){toast("정보 입력부터 진행해 주세요.");go("info");return}
+    btn.disabled=true;btn.textContent=S.result?"저장 중":"가입 처리 중";
     try{
-      if(signupResult) await SignupAPI.call("/api/consents",{consentToken:signupResult.consentToken,consents});
+      if(S.result)await API.call("/api/consents",{consentToken:S.result.consentToken,consents:consentBody()});
       else{
-        const {memberHint,...info}=signupInfo;
-        signupResult=await SignupAPI.call("/api/signup",{...info,referrer:ref.input.value||null,consents});
-        signupInfo={...signupInfo,password:undefined}; // 가입 후에는 비밀번호를 들고 있지 않는다
+        const {memberHint,...info}=S.info;
+        S.result=await API.call("/api/signup",{...info,referrer:$("#f-ref").value||null,consents:consentBody()});
+        S.info={...S.info,password:undefined}; // 가입 후에는 비밀번호를 들고 있지 않는다
       }
     }catch(err){
-      render();showToast(err.message);
-      if(err.code==="social_ticket_invalid"||err.code==="social_already_linked"){setTimeout(()=>{socialSignup=null;ShinInfo.setSocial(null);go("entry")},1200);return}
-      if(String(err.code).startsWith("referrer")){ref.checked="";refMsg("err",err.message);ref.input.focus();return}
+      btn.textContent="가입하기";renderConsent();toast(err.message);
+      if(String(err.code).startsWith("referrer")){ref.reset();setMsg($("#m-ref"),"err",err.message);return}
       if(["id_taken","nickname_taken","email_unavailable","invalid_input"].includes(err.code))setTimeout(()=>go("info"),1200);
       return;
     }
-  }else if(!signupResult){
-    signupResult={memberType:(signupInfo&&signupInfo.memberHint)||"new"}; // 서버 없이 연 경우
-  }
-  renderDoneHero(signupResult.memberType,signupResult.firstJoinedAt);
-  $("#doneRef").textContent=ref.input.value||"입력하지 않았어요";
-  lockReferrer();
-  const d=new Date();$("#doneDate").textContent=`${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일`;
-  const sc=vals(state.svc).filter(Boolean).length,p=names(state.mk.point),f=names(state.mk.duty);
-  const item=(label,sub,y)=>`<div class="li"><span>${label}${sub?`<small>${sub}</small>`:""}</span>${badge(y)}</div>`;
-  const mk=x=>x.y.length?`동의 ${x.y.join("·")}`+(x.n.length?` / 미동의 ${x.n.join("·")}`:""):"전체 미동의";
-  $("#doneList").innerHTML=item("필수 약관 3건","이용약관 · 개인정보 · 만 14세",true)+item("통합 ID 서비스",`${sc}/9 이용`,sc>0)+item("신세계포인트 마케팅",mk(p),p.y.length>0)+item("신세계면세점 마케팅",mk(f),f.y.length>0)+item("야간 마케팅","21~08시",state.mk.night);
-  render(); // "가입 처리 중"으로 잠근 버튼을 풀어야 "동의 내용 수정"에서 다시 저장할 수 있다
-  go("done");
+  }else if(!S.result)S.result={memberType:(S.info&&S.info.memberHint)||"new"}; // 서버 없이 연 경우
+  btn.textContent="가입하기";
+  renderDone();go("done");
 });
-$("#edit").addEventListener("click",()=>go("consent"));
-render();
-})();
-</script>
-<script>
-(function(){
-  /* 혜택 안내: 자동 전환 없이 좌우 스와이프로만 넘긴다.
-     터치는 기본 스크롤 + scroll-snap, 마우스는 드래그로 같은 동작을 낸다. */
-  const tr=document.getElementById("crTrack"),sl=[...tr.querySelectorAll(".cr-s")],dots=[...document.querySelectorAll("#crDots button")];
-  const entry=document.getElementById("v-entry");
-  let cur=1,lock=0,drag=null;
-  const left=i=>sl[i].offsetLeft-(tr.clientWidth-sl[i].offsetWidth)/2;
-  const mark=i=>{cur=i;sl.forEach((e,k)=>e.classList.toggle("on",k===i));dots.forEach((d,k)=>d.setAttribute("aria-current",k===i))};
-  const go=(i,smooth=true)=>{mark(i);lock=Date.now()+(smooth?700:0);tr.scrollTo({left:left(i),behavior:smooth?"smooth":"instant"})};
-  const nearest=()=>{const mid=tr.scrollLeft+tr.clientWidth/2;return sl.reduce((b,e,k)=>Math.abs(e.offsetLeft+e.offsetWidth/2-mid)<Math.abs(sl[b].offsetLeft+sl[b].offsetWidth/2-mid)?k:b,0)};
-  tr.addEventListener("scroll",()=>{if(Date.now()>=lock)mark(nearest())},{passive:true});
-  dots.forEach((d,k)=>d.addEventListener("click",()=>go(k)));
-  tr.addEventListener("keydown",e=>{if(e.key==="ArrowRight")go(Math.min(cur+1,2));if(e.key==="ArrowLeft")go(Math.max(cur-1,0))});
-  // 마우스 스와이프
-  tr.addEventListener("pointerdown",e=>{if(e.pointerType!=="mouse")return;drag={x:e.clientX,l:tr.scrollLeft,from:cur};tr.style.scrollSnapType="none";tr.classList.add("drag");tr.setPointerCapture(e.pointerId)});
-  tr.addEventListener("pointermove",e=>{if(drag)tr.scrollLeft=drag.l-(e.clientX-drag.x)});
-  const end=e=>{if(!drag)return;const dx=e.clientX-drag.x,from=drag.from;drag=null;tr.classList.remove("drag");tr.style.scrollSnapType="";
-    go(dx<-40?Math.min(from+1,2):dx>40?Math.max(from-1,0):from)};
-  tr.addEventListener("pointerup",end);tr.addEventListener("pointercancel",end);
-  mark(1);go(1,false);
-  new MutationObserver(()=>{if(!entry.hidden)go(cur,false)}).observe(entry,{attributes:true,attributeFilter:["hidden"]});
+
+/* ===== 5. 완료 ===== */
+const fmtDate=d=>`${d.getFullYear()}. ${d.getMonth()+1}. ${d.getDate()}.`;
+function renderDone(){
+  const i=S.info||{name:DEMO.name,phone:DEMO.phone,email:"demo@example.com",nickname:"-"},back=S.result.memberType==="returning",n=mask.name(i.name);
+  $("#done-title").innerHTML=back?`${n} 님,<br>다시 오신 걸 환영해요`:`${n} 님,<br>가입이 완료됐어요`;
+  $("#done-sub").textContent=back?(S.result.firstJoinedAt?`탈퇴 전 가입일(${fmtDate(new Date(S.result.firstJoinedAt))})을 이어서 기존 회원으로 돌아왔어요.`:"기존 회원으로 돌아왔어요."):"동의 내용은 아래에서 확인하고 바꿀 수 있어요.";
+  $("#d-nick").textContent=i.nickname;$("#d-phone").textContent=mask.phone(i.phone);$("#d-email").textContent=mask.email(i.email);
+  $("#d-date").textContent=fmtDate(new Date());$("#d-ref").textContent=$("#f-ref").value||"입력하지 않았어요";
+  const sc=vals(C.svc).filter(Boolean).length,names=g=>({y:CHANNELS.filter(c=>C.mk[g][c]),n:CHANNELS.filter(c=>!C.mk[g][c])});
+  const mk=x=>x.y.length?`동의 ${x.y.join("·")}`+(x.n.length?` / 미동의 ${x.n.join("·")}`:""):"전체 미동의";
+  const row=(l,sub,y)=>`<div class="li"><span>${l}${sub?`<small>${sub}</small>`:""}</span><span class="badge${y?" y":""}">${y?"동의":"미동의"}</span></div>`;
+  const p=names("point"),f=names("duty");
+  $("#d-list").innerHTML=row("필수 약관 3건","이용약관 · 개인정보 · 만 14세",true)+row("통합 ID 서비스",`${sc}/${SERVICES.length} 이용`,sc>0)+
+    row("신세계포인트 마케팅",mk(p),p.y.length>0)+row("신세계면세점 마케팅",mk(f),f.y.length>0)+row("야간 마케팅","21~08시",C.mk.night);
+  // 추천인은 가입할 때만 입력한다
+  $("#f-ref").readOnly=true;$("#b-ref").disabled=true;if(!$("#f-ref").value)$("#ref-box").hidden=true;
+}
+$("#edit-consent").addEventListener("click",()=>{go("consent");renderConsent();$("#submit").textContent="동의 내용 저장"});
+
+/* 시작 */
+fillVerified();renderPw();renderConsent();
 })();
 </script>
 </body>

@@ -215,3 +215,18 @@ supabase secrets set ALLOWED_ORIGIN=https://배포주소   # 선택. 비우면 �
 
 - 필수 약관 3건(이용약관, 개인정보 수집·이용, 만 14세 이상)의 문구와 "보기" 약관 전문은 임의 값입니다. 실제 문구로 교체가 필요합니다.
 - 서비스 브랜드 색과 로고 자리 텍스트는 기존 화면 캡처에서 눈대중으로 옮긴 값입니다.
+
+
+## Before / After 비교
+
+| 브랜치 | 내용 |
+| --- | --- |
+| `feature/supabase-backend` | **Before** — 기존 화면(팀 작업물) + Supabase 백엔드 연결 |
+| `redesign/soft-clarity` | **After** — `signup-flow-ux`, `soft-clarity` 스킬로 화면을 새로 만든 버전. 같은 API를 그대로 사용 |
+
+```bash
+git checkout feature/supabase-backend && python3 -m http.server 8000   # Before
+git checkout redesign/soft-clarity   && python3 -m http.server 8001   # After
+```
+
+After 의 변화: 한 화면 한 행동(고정 하단 버튼), 남은 입력 항목 안내, 확인 버튼 상태 통일(확인 → 확인 중 → 확인 완료), 필수/선택 약관을 한눈에 구분, 상태별(성공·오류·대기) 색+아이콘+문구. 개선 효과는 사용성 테스트 전에는 단정하지 않는다.
