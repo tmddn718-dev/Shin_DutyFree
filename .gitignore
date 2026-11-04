@@ -1,0 +1,4 @@
+signup.db
+signup.db-*
+__pycache__/
+.env

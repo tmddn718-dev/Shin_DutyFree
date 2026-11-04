@@ -57,7 +57,7 @@
   /* ----- 헤더 ----- */
   .si-header {
     position: sticky; top: 0; z-index: 10;
-    height: 56px;
+    min-height: 56px;
     display: flex; align-items: center; justify-content: space-between;
     padding: 0 16px;
     background: var(--si-bg);
@@ -93,14 +93,16 @@
     display: block; margin-bottom: 8px;
     font-size: 14px; font-weight: 600; color: var(--si-content-2);
   }
-  .si-row { display: flex; gap: 8px; align-items: center; }
-  .si-row > .si-input-wrap { flex: 1; min-width: 0; }
+  /* 글꼴·글자 크기가 바뀌어도 잘리지 않게: 높이는 최소값만 두고, 자리가 모자라면 버튼이 아래 줄로 내려간다 */
+  .si-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .si-row > .si-input-wrap { flex: 1 1 12em; min-width: 0; }
+  .si-field[data-field="email"] .si-row > .si-input-wrap { flex-basis: 6em; }
 
   .si-input-wrap { position: relative; }
   .si-input, .si-select {
     width: 100%;
-    height: var(--si-field-h);
-    padding: 0 16px;
+    min-height: var(--si-field-h);
+    padding: 8px 16px;
     font-size: 15px;
     background: var(--si-bg);
     border: 1px solid var(--si-border-1);
@@ -136,7 +138,7 @@
   .si-end-btn:hover { color: var(--si-content-2); }
 
   .si-btn {
-    height: var(--si-field-h); padding: 0 16px;
+    min-height: var(--si-field-h); padding: 8px 16px;
     flex-shrink: 0;
     font-size: 14px; font-weight: 600; white-space: nowrap;
     border-radius: var(--si-radius); cursor: pointer;
@@ -153,14 +155,16 @@
   /* ----- 안내 / 오류 문구 ----- */
   .si-msg { margin: 8px 0 0; font-size: 13px; line-height: 1.4; display: flex; gap: 4px; align-items: flex-start; }
   .si-msg[hidden] { display: none; }
+  .si-social { margin: 0 0 24px; padding: 12px 16px; border-radius: var(--si-radius); background: #E6F2FF; color: var(--si-content-2); font-size: 14px; line-height: 1.5; }
+  .si-social[hidden], .si-field[hidden] { display: none; }
   .si-msg.is-error { color: var(--si-negative); }
   .si-msg.is-success { color: var(--si-positive); }
   .si-msg.is-info { color: var(--si-content-3); }
-  .si-msg svg { flex-shrink: 0; margin-top: 1px; }
+  .si-msg svg { flex-shrink: 0; margin-top: .1em; }
 
   /* 이메일 확인: 메시지는 입력창 바로 아래, 확인 버튼은 그 오른쪽 (상태가 바뀌어도 높이 고정) */
-  .si-email-foot { display: flex; gap: 12px; align-items: flex-start; margin-top: 8px; min-height: 40px; }
-  .si-email-foot .si-msg { margin: 0; flex: 1; min-width: 0; padding-top: 2px; }
+  .si-email-foot { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: flex-start; margin-top: 8px; min-height: 40px; }
+  .si-email-foot .si-msg { margin: 0; flex: 1 1 14em; min-width: 0; padding-top: 2px; }
   #siEmailCheck { height: 40px; padding: 0 14px; font-size: 13px; }
   #siEmailCheck:disabled.is-done { color: var(--si-positive); border-color: var(--si-border-1); }
   .si-btn.is-loading::before { content: ""; display: inline-block; width: 12px; height: 12px; margin-right: 6px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; vertical-align: -2px; animation: si-spin .7s linear infinite; }
@@ -460,7 +464,7 @@ section{padding:0 16px;margin-top:20px}
 .cs * { box-sizing: border-box; margin: 0; }
 .cs button { font: inherit; letter-spacing: inherit; color: inherit; background: none; border: 0; cursor: pointer; text-align: left; }
 .cs .page { max-width: 480px; min-height: 100vh; margin: 0 auto; background: #fff; padding-bottom: 112px; }
-.cs .top { display: grid; grid-template-columns: 48px 1fr 48px; align-items: center; height: 56px; padding: 0 4px; }
+.cs .top { display: grid; grid-template-columns: 48px 1fr 48px; align-items: center; min-height: 56px; padding: 0 4px; }
 .cs .top b { text-align: center; font-size: 18px; font-weight: 700; }
 .cs .top .back { display: grid; place-items: center; width: 48px; height: 48px; font-size: 26px; text-align: center; }
 .cs .top .stp { padding-right: 16px; text-align: right; font-size: 14px; font-weight: 600; color: var(--blue); }
@@ -499,7 +503,7 @@ section{padding:0 16px;margin-top:20px}
 .cs .ab .rw { min-height: 44px; font-size: 14px; color: var(--ink2); }
 .cs .perk { margin: 0 0 8px 34px; padding: 8px 12px; border-radius: 8px; background: #FFF5ED; color: #F95401; font-size: 12px; font-weight: 600; }
 .cs .mx { padding: 0 0 8px 34px; }
-.cs .mr { display: grid; grid-template-columns: 1fr 72px 72px; align-items: center; min-height: 44px; border-bottom: 1px solid var(--line); }
+.cs .mr { display: grid; grid-template-columns: 1fr minmax(72px, auto) minmax(72px, auto); column-gap: 4px; align-items: center; min-height: 44px; border-bottom: 1px solid var(--line); }
 .cs .mr:last-child { border-bottom: 0; }
 .cs .mr.h { min-height: 32px; font-size: 12px; color: var(--ink3); font-weight: 600; }
 .cs .mr.h span:not(:first-child) { text-align: center; }
@@ -507,10 +511,26 @@ section{padding:0 16px;margin-top:20px}
 .cs .mr .cell .rw { width: auto; min-height: 44px; }
 .cs .sum { margin: 4px 20px 0; padding-top: 12px; border-top: 1px solid var(--line); }
 .cs .note { margin: 4px 20px 0; font-size: 12px; color: var(--ink3); }
+/* 추천인 (선택) */
+.cs .ref { margin: 12px 20px 8px; padding-top: 16px; border-top: 1px solid var(--line); }
+.cs .ref-l { display: block; margin-bottom: 8px; font-size: 14px; font-weight: 600; color: var(--ink2); }
+.cs .ref-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.cs .ref-in { flex: 1 1 12em; min-width: 0; min-height: 48px; padding: 8px 16px; border: 1px solid #D2D4E5; border-radius: 8px; font: inherit; font-size: 15px; color: var(--ink); background: #fff; outline: 0; }
+.cs .ref-in::placeholder { color: #9595B2; }
+.cs .ref-in:focus { border-color: var(--ink); }
+.cs .ref-in[readonly] { background: var(--bg3); border-color: var(--bg3); color: var(--ink2); }
+.cs .ref.is-error .ref-in { border-color: #ED1414; }
+.cs .ref-btn { flex: none; min-height: 48px; padding: 8px 16px; border: 1px solid #D2D4E5; border-radius: 8px; background: #fff; font-weight: 600; text-align: center; white-space: nowrap; }
+.cs .ref-btn:hover:not(:disabled) { background: var(--bg3); }
+.cs .ref-btn:disabled { color: var(--dis); cursor: default; }
+.cs .ref-btn:focus-visible, .cs .ref-in:focus-visible { outline: 3px solid #0F78FF; outline-offset: 2px; }
+.cs .ref-msg { margin-top: 8px; font-size: 13px; line-height: 1.4; color: var(--ink3); }
+.cs .ref-msg.ok { color: var(--pos); }
+.cs .ref-msg.err { color: #ED1414; }
 
 /* 하단 고정 CTA */
 .cs .cta { position: fixed; left: 50%; bottom: 0; transform: translateX(-50%); width: 100%; max-width: 480px; padding: 12px 20px calc(16px + env(safe-area-inset-bottom)); background: linear-gradient(to top, #fff 80%, rgba(255,255,255,0)); z-index: 6; }
-.cs .btn { display: block; width: 100%; height: 52px; border-radius: 8px; background: var(--blue); color: #fff; font-size: 16px; font-weight: 600; text-align: center; transition: all .2s ease-in-out; }
+.cs .btn { display: block; width: 100%; min-height: 52px; padding: 8px 16px; border-radius: 8px; background: var(--blue); color: #fff; font-size: 16px; font-weight: 600; text-align: center; transition: all .2s ease-in-out; }
 .cs .btn:disabled { background: var(--line); color: var(--ink3); cursor: not-allowed; }
 .cs .btn.ghost { margin-top: 8px; background: #fff; color: var(--ink); border: 1px solid #D2D4E5; }
 
@@ -588,7 +608,7 @@ section{padding:0 16px;margin-top:20px}
 
     <div class="divider"><span>SNS로 간편 가입하기</span></div>
     <div class="sns">
-      <button class="sns-btn kakao" type="button" data-method="카카오 간편가입" aria-label="카카오로 가입">
+      <button class="sns-btn kakao" type="button" data-oauth="kakao" aria-label="카카오로 가입">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4C7.6 4 4 6.8 4 10.3c0 2.2 1.4 4.1 3.6 5.2L6.8 19l3.7-2.3c.5.1 1 .1 1.5.1 4.4 0 8-2.8 8-6.5S16.4 4 12 4z"/></svg>
       </button>
       <button class="sns-btn appcard" type="button" data-method="앱카드 간편가입" aria-label="앱카드로 가입">앱카드</button>
@@ -659,6 +679,9 @@ section{padding:0 16px;margin-top:20px}
 
     <form id="siForm" novalidate autocomplete="on">
 
+      <!-- 간편가입으로 왔을 때만 보인다. 이때 아이디·비밀번호 칸은 숨긴다 -->
+      <p class="si-social" id="siSocial" role="status" hidden></p>
+
       <!-- 아이디 -->
       <div class="si-field" data-field="userId">
         <label class="si-label" for="siUserId">아이디 <span class="si-req">*</span></label>
@@ -700,6 +723,19 @@ section{padding:0 16px;margin-top:20px}
           <button type="button" class="si-end-btn" data-toggle-pw="siPw2" aria-label="비밀번호 보기"></button>
         </div>
         <p class="si-msg" id="siPw2Msg" hidden aria-live="polite"></p>
+      </div>
+
+      <!-- 닉네임 : 아이디·비밀번호 바로 아래 -->
+      <div class="si-field" data-field="nickname">
+        <label class="si-label" for="siNick">닉네임 <span class="si-req">*</span></label>
+        <div class="si-row">
+          <div class="si-input-wrap">
+            <input class="si-input" id="siNick" name="nickname" type="text" autocomplete="nickname"
+                   spellcheck="false" maxlength="10" placeholder="한글, 영문, 숫자 2~10자" />
+          </div>
+          <button type="button" class="si-btn si-btn-outline" id="siNickCheck" disabled>중복확인</button>
+        </div>
+        <p class="si-msg" id="siNickMsg" hidden></p>
       </div>
 
       <!-- 이름 / 휴대폰 : 본인인증 단계에서 받은 값 -->
@@ -823,6 +859,17 @@ section{padding:0 16px;margin-top:20px}
     <div id="mkBody" hidden><div class="mx" id="matrix"></div></div>
   </div>
   <div class="sum" id="mkSum" hidden></div>
+
+  <!-- 추천인 (선택) : 선택 항목 바로 아래 -->
+  <div class="ref" id="refBox">
+    <label class="ref-l" for="refInput"><i class="op">(선택)</i> 추천인 아이디</label>
+    <div class="ref-row">
+      <input class="ref-in" id="refInput" type="text" inputmode="latin" autocapitalize="off" spellcheck="false"
+             maxlength="20" placeholder="추천해 준 회원의 아이디" aria-describedby="refMsg" />
+      <button type="button" class="ref-btn" id="refBtn" disabled>확인</button>
+    </div>
+    <p class="ref-msg" id="refMsg" role="status" aria-live="polite">추천해 준 회원이 있으면 아이디를 입력해 주세요.</p>
+  </div>
   <p class="note">광고성 정보 수신을 거부해도 주문·배송·약관 변경 등 고객 안내는 발송돼요.</p>
 
   <div class="cta"><button class="btn" id="submit" type="button">동의하고 가입하기</button></div>
@@ -837,8 +884,8 @@ section{padding:0 16px;margin-top:20px}
   <header><span style="width:24px"></span><b>가입 완료</b><span style="width:24px"></span></header>
   <div class="hero">
     <div class="ok"><svg viewBox="0 0 28 28"><path d="M6 14.5l5.5 5L22 8.5"/></svg></div>
-    <h1>김*민 님,<br>통합 ID 가입이 완료됐어요</h1>
-    <p class="sub">동의 내용은 아래 한 곳에서 확인하고 바꿀 수 있어요.</p>
+    <h1 id="doneTitle">김*민 님,<br>통합 ID 가입이 완료됐어요</h1>
+    <p class="sub" id="doneSub">동의 내용은 아래 한 곳에서 확인하고 바꿀 수 있어요.</p>
   </div>
   <section>
     <div class="card">
@@ -849,9 +896,12 @@ section{padding:0 16px;margin-top:20px}
   <section>
     <div class="card info">
       <div class="ch">회원정보</div>
-      <div><span>휴대폰</span><span>010-50**-43**</span></div>
-      <div><span>이메일</span><span>gu********@naver.com</span></div>
-      <div><span>주소</span><span>경기 하남시 덕산로, *****</span></div>
+      <div><span>가입 방식</span><span id="doneMethod">통합회원 아이디</span></div>
+      <div><span>닉네임</span><span id="doneNick">-</span></div>
+      <div><span>휴대폰</span><span id="donePhone">010-50**-43**</span></div>
+      <div><span>이메일</span><span id="doneEmail">gu********@naver.com</span></div>
+      <div><span>주소</span><span id="doneAddr">경기 하남시 덕산로, *****</span></div>
+      <div><span>추천인</span><span id="doneRef">입력하지 않았어요</span></div>
     </div>
     <p class="note">본인인증으로 확인된 정보로 자동 업데이트돼요.</p>
   </section>
@@ -882,6 +932,55 @@ function showToast(msg){
   if(!t){t=document.createElement("div");t.className="ev-toast";t.setAttribute("role","status");document.body.append(t)}
   t.textContent=msg;t.classList.add("show");clearTimeout(showToast.t);showToast.t=setTimeout(()=>t.classList.remove("show"),2600);
 }
+// ===== 백엔드 연결 =====
+// server.py 로 열면 실제 API를 쓰고, index.html 만 열면(서버 없음) 기존 모의 응답으로 동작한다.
+const SignupAPI=(()=>{
+  const ready=/^https?:$/.test(location.protocol)
+    ?fetch("/api/health").then(r=>r.ok&&r.json()).then(d=>!!(d&&d.ok)).catch(()=>false)
+    :Promise.resolve(false);
+  async function call(path,body){
+    const opt=body===undefined?{}:{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)};
+    let r;
+    try{r=await fetch(path,opt)}catch(e){const err=new Error("서버에 연결할 수 없어요. 잠시 후 다시 시도해 주세요.");err.code="network";throw err}
+    const data=await r.json().catch(()=>({}));
+    if(!r.ok){const err=new Error(data.message||"잠시 후 다시 시도해 주세요.");err.status=r.status;err.code=data.error;throw err}
+    return data;
+  }
+  return {ready,call};
+})();
+let signupInfo=null;   // 정보입력 값 (비밀번호 포함, 메모리에만 보관)
+let signupResult=null; // 가입 완료 후 받은 값 (동의 수정용 토큰)
+let socialSignup=null; // 간편가입 티켓으로 받은 프로필
+
+// ===== 간편가입 (OAuth) =====
+// 버튼 → 서버 /api/auth/{제공자}/start → 제공자 로그인 → 서버 콜백 → /#social=티켓 으로 돌아온다.
+// 가입만 다룬다: 티켓으로 프로필을 받아 본인인증 → 정보입력(아이디·비밀번호 없음) → 약관 동의로 이어간다.
+document.addEventListener("click",async e=>{
+  // 간편가입 뒤 돌아와서 통합회원 가입을 고르면 일반 가입으로 되돌린다
+  if(socialSignup&&e.target.closest('#v-entry [data-go="verification"]')){socialSignup=null;ShinInfo.setSocial(null)}
+  const b=e.target.closest("[data-oauth]");if(!b)return;
+  if(!(await SignupAPI.ready)){showToast("server.py 로 열어야 간편가입을 시험할 수 있어요.");return}
+  location.href="/api/auth/"+encodeURIComponent(b.dataset.oauth)+"/start";
+});
+const SOCIAL_ERRORS={
+  denied:"간편가입을 취소했어요.",
+  state:"간편가입을 처음부터 다시 진행해 주세요.",
+  provider:"간편가입 서비스와 연결하지 못했어요. 잠시 후 다시 시도해 주세요.",
+  already:"이미 이 계정으로 가입했어요."
+};
+document.addEventListener("DOMContentLoaded",async()=>{
+  const h=new URLSearchParams(location.hash.slice(1)),ticket=h.get("social"),err=h.get("social_error");
+  if(!ticket&&!err)return;
+  history.replaceState({s:"entry"},"",location.pathname); // 티켓이 주소창·기록에 남지 않게
+  if(err){showToast(SOCIAL_ERRORS[err]||SOCIAL_ERRORS.state);return}
+  try{
+    socialSignup={ticket,...await SignupAPI.call("/api/auth/ticket",{ticket})};
+    ShinInfo.setSocial(socialSignup);
+    showToast(`${socialSignup.providerName} 계정을 확인했어요. 본인인증을 진행해 주세요.`);
+    go("verification");
+  }catch(e){showToast(e.message)}
+});
+
 // 정보입력 완료 → 약관 동의로 이동, 완료 화면의 회원정보에 마스킹해서 반영
 const mask={
   name:n=>n.length<3?n[0]+"*":n[0]+"*".repeat(n.length-2)+n.slice(-1),
@@ -889,12 +988,26 @@ const mask={
   email:m=>{const[i,d]=m.split("@");return i.slice(0,2)+"*".repeat(Math.max(i.length-2,2))+"@"+d}
 };
 document.addEventListener("shin:info-complete",e=>{
-  const d=e.detail,v=document.querySelectorAll("#done .info div:not(.ch) span:last-child");
-  document.querySelector("#done .hero h1").innerHTML=`${mask.name(d.name)} 님,<br>통합 ID 가입이 완료됐어요`;
-  v[0].textContent=mask.phone(d.phone);v[1].textContent=mask.email(d.email);
-  v[2].textContent=d.address?d.address.address1.split(" ").slice(0,3).join(" ")+", *****":"입력하지 않았어요";
+  const {emailCheck,...d}=e.detail,$id=id=>document.getElementById(id);
+  signupInfo=d;signupResult=null;
+  // 서버 없이 열었을 때 완료 화면 문구에 쓰는 값 (서버가 있으면 가입 응답의 memberType 이 우선)
+  signupInfo.memberHint=emailCheck&&emailCheck.status==="returning"?"returning":"new";
+  $id("doneNick").textContent=d.nickname;
+  $id("doneMethod").textContent=socialSignup?`${socialSignup.providerName} 간편가입`:"통합회원 아이디";
+  $id("donePhone").textContent=mask.phone(d.phone);$id("doneEmail").textContent=mask.email(d.email);
+  $id("doneAddr").textContent=d.address?d.address.address1.split(" ").slice(0,3).join(" ")+", *****":"입력하지 않았어요";
+  document.dispatchEvent(new CustomEvent("shin:consent-open"));
   go("consent");
 });
+// 완료 화면 제목: 신규 / 복귀 회원
+const fmtDate=iso=>{const t=new Date(iso);return `${t.getFullYear()}. ${t.getMonth()+1}. ${t.getDate()}.`};
+function renderDoneHero(memberType,firstJoinedAt){
+  const n=mask.name(signupInfo?signupInfo.name:"김신세"),back=memberType==="returning";
+  document.getElementById("doneTitle").innerHTML=back?`${n} 님,<br>다시 오신 걸 환영해요`:`${n} 님,<br>통합 ID 가입이 완료됐어요`;
+  document.getElementById("doneSub").textContent=back
+    ?(firstJoinedAt?`탈퇴 전 가입일(${fmtDate(firstJoinedAt)})을 이어서 기존 회원으로 복귀했어요.`:"탈퇴 후 30일이 지나지 않아 기존 회원으로 복귀했어요.")
+    :"동의 내용은 아래 한 곳에서 확인하고 바꿀 수 있어요.";
+}
 
 </script>
 <script>
@@ -937,28 +1050,35 @@ form.addEventListener("submit", (e) => {
 
   /* ===== 다른 화면/서버와 연결할 때 바꾸는 부분 ===== */
   var config = {
-    // 아이디 중복확인. 서버가 생기면 이 함수만 fetch로 바꾸면 된다. true = 사용 가능
+    // 아이디 중복확인. true = 사용 가능
     checkIdAvailable: function (id) {
-      var taken = ['admin', 'shinsegae', 'test1234', 'gudals4360'];
-      return new Promise(function (resolve) {
-        setTimeout(function () { resolve(taken.indexOf(id) === -1); }, 300);
+      return SignupAPI.ready.then(function (on) {
+        if (on) return SignupAPI.call('/api/users/check-id?userId=' + encodeURIComponent(id))
+          .then(function (d) { return d.available; });
+        return mockCheckId(id);
+      });
+    },
+    // 닉네임 중복확인. true = 사용 가능
+    checkNicknameAvailable: function (nick) {
+      return SignupAPI.ready.then(function (on) {
+        if (on) return SignupAPI.call('/api/users/check-nickname?nickname=' + encodeURIComponent(nick))
+          .then(function (d) { return d.available; });
+        return mockCheckNickname(nick);
       });
     },
     /*
-     * [프로토타입 · 모의 응답] 실제 탈퇴 이력/가입 제한을 조회하는 코드가 아니다.
-     * 서버가 생기면 이 함수만 API 호출로 바꾼다. resolve 값:
-     *   'available'        신규 이메일
-     *   'rejoin_available' 이전 가입 이력이 있으나 재가입 허용
-     *   'unavailable'      가입 제한
-     * 모의 규칙: 아이디가 rejoin 으로 시작 → 재가입 가능, blocked 로 시작 → 가입 제한, 그 외 → 신규.
+     * 이메일 가입 가능 여부. 본인인증한 휴대폰을 같이 보내 탈퇴 회원 본인인지 확인한다.
+     * resolve 값 { status, daysLeft?, reason? }:
+     *   'available'   신규 이메일
+     *   'returning'   탈퇴한 이메일 + 같은 휴대폰 + 탈퇴 후 30일 이내 → 기존 회원으로 복귀
+     *   'rejoin_new'  탈퇴한 이메일이지만 30일이 지났거나(reason: 'expired') 본인이 아님 → 신규 회원
+     *   'unavailable' 가입 제한 또는 이미 가입됨 (사유는 구분하지 않음)
      * (실제 서비스에서는 이메일 소유 확인 전에 탈퇴 이력을 노출하지 않도록 정책 검토 필요)
      */
-    checkEmail: function (email) {
-      return new Promise(function (resolve) {
-        setTimeout(function () {
-          var id = email.split('@')[0].toLowerCase();
-          resolve(id.indexOf('rejoin') === 0 ? 'rejoin_available' : id.indexOf('blocked') === 0 ? 'unavailable' : 'available');
-        }, 700);
+    checkEmail: function (email, phone) {
+      return SignupAPI.ready.then(function (on) {
+        if (on) return SignupAPI.call('/api/email/check', { email: email, phone: phone });
+        return mockCheckEmail(email);
       });
     },
     // 다음 단계 주소. 비워두면 이동하지 않고 이벤트만 보낸다.
@@ -967,12 +1087,43 @@ form.addEventListener("submit", (e) => {
     demoVerified: { name: '김신세', phone: '010-1234-5678' }
   };
 
+  /*
+   * ===== 서버 없이(index.html 만) 열었을 때 쓰는 모의 응답 =====
+   * 실제 탈퇴 이력/가입 제한을 조회하는 코드가 아니다.
+   * 이메일 모의 규칙: 아이디가 rejoin 으로 시작 → 30일 이내 복귀, old 로 시작 → 30일 지나 신규,
+   *                   blocked 로 시작 → 가입 제한, 그 외 → 신규.
+   */
+  function mockCheckId(id) {
+    var taken = ['admin', 'shinsegae', 'test1234', 'gudals4360', 'friend1234'];
+    return new Promise(function (resolve) {
+      setTimeout(function () { resolve(taken.indexOf(id) === -1); }, 300);
+    });
+  }
+  function mockCheckNickname(nick) {
+    var taken = ['관리자', '운영자', 'admin', '신세계', '친구'];
+    return new Promise(function (resolve) {
+      setTimeout(function () { resolve(taken.indexOf(nick.toLowerCase()) === -1); }, 300);
+    });
+  }
+  function mockCheckEmail(email) {
+    return new Promise(function (resolve) {
+      setTimeout(function () {
+        var id = email.split('@')[0].toLowerCase();
+        resolve(id.indexOf('rejoin') === 0 ? { status: 'returning', daysLeft: 20 }
+          : id.indexOf('old') === 0 ? { status: 'rejoin_new', reason: 'expired' }
+          : id.indexOf('blocked') === 0 ? { status: 'unavailable' } : { status: 'available' });
+      }, 700);
+    });
+  }
+
   var $ = function (id) { return document.getElementById(id); };
   var form = $('siForm');
 
   var state = {
     idChecked: false,     // 중복확인 통과한 아이디
     checkedId: '',
+    checkedNick: '',      // 중복확인 통과한 닉네임
+    social: null,         // 간편가입이면 { ticket, provider, providerName, email, nickname }
     pwTouched: false,
     pw2Touched: false,
     addrSelected: false
@@ -1145,6 +1296,49 @@ form.addEventListener("submit", (e) => {
     });
   });
 
+  /* ---------- 닉네임 ---------- */
+  var nickInput = $('siNick'), nickBtn = $('siNickCheck'), nickMsg = $('siNickMsg');
+  var NICK_RULE = '한글, 영문, 숫자 2~10자로 입력해 주세요.';
+  function nickValue() { return nickInput.value.trim(); }
+  function nickFormatOk(v) { return /^[가-힣A-Za-z0-9]{2,10}$/.test(v); }
+
+  // 한글 조합 중에 글자를 지우면 입력이 깨지므로 정리하지 않고 검사만 한다
+  nickInput.addEventListener('input', function () {
+    var v = nickValue();
+    if (state.checkedNick !== v) state.checkedNick = '';
+    nickBtn.disabled = !nickFormatOk(v);
+    setFieldError('nickname', false);
+    if (!v) setMsg(nickMsg);
+    else if (!nickFormatOk(v)) setMsg(nickMsg, 'info', NICK_RULE);
+    else if (!state.checkedNick) setMsg(nickMsg, 'info', '중복확인을 해 주세요.');
+    updateSubmit();
+  });
+  nickInput.addEventListener('blur', function () {
+    var v = nickValue();
+    if (v && !nickFormatOk(v)) { setMsg(nickMsg, 'error', NICK_RULE); setFieldError('nickname', true); }
+  });
+  nickInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); if (!nickBtn.disabled) nickBtn.click(); }
+  });
+  nickBtn.addEventListener('click', function () {
+    var v = nickValue();
+    if (!nickFormatOk(v)) return;
+    nickBtn.disabled = true;
+    nickBtn.textContent = '확인 중';
+    Promise.resolve(config.checkNicknameAvailable(v)).then(function (ok) {
+      if (nickValue() !== v) return; // 확인 중에 값이 바뀜
+      state.checkedNick = ok ? v : '';
+      setMsg(nickMsg, ok ? 'success' : 'error', ok ? '사용할 수 있는 닉네임이에요.' : '이미 사용 중인 닉네임이에요.');
+      setFieldError('nickname', !ok);
+      updateSubmit();
+    }).catch(function () {
+      setMsg(nickMsg, 'error', '잠시 후 다시 시도해 주세요.');
+    }).then(function () {
+      nickBtn.textContent = '중복확인';
+      nickBtn.disabled = !nickFormatOk(nickValue());
+    });
+  });
+
   /* ---------- 이메일 ---------- */
   var emailId = $('siEmailId'), dSel = $('siDomainSelect'), dInput = $('siDomainInput'),
       dReset = $('siDomainReset'), emailMsg = $('siEmailMsg'), emailBtn = $('siEmailCheck');
@@ -1156,10 +1350,11 @@ form.addEventListener("submit", (e) => {
     INVALID: 'invalid',
     CHECKING: 'checking',
     AVAILABLE: 'available',
-    REJOIN_AVAILABLE: 'rejoin_available',
+    RETURNING: 'returning',
+    REJOIN_NEW: 'rejoin_new',
     UNAVAILABLE: 'unavailable'
   };
-  var emailState = { status: emailStatus.IDLE, checked: '', token: 0, failed: false };
+  var emailState = { status: emailStatus.IDLE, checked: '', token: 0, failed: false, result: null };
 
   function domainValue() { return dInput.hidden ? dSel.value : dInput.value.trim().toLowerCase(); }
   function showDirect(on, value) {
@@ -1175,9 +1370,9 @@ form.addEventListener("submit", (e) => {
     return /^[A-Za-z0-9._%+-]+$/.test(emailId.value.trim()) &&
            /^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(domainValue() || '');
   }
-  // 확인이 끝난 이메일(신규 또는 재가입 가능)만 다음 단계로 보낸다
+  // 확인이 끝난 이메일(신규, 복귀, 탈퇴 후 신규)만 다음 단계로 보낸다
   function emailOk() {
-    return (emailState.status === emailStatus.AVAILABLE || emailState.status === emailStatus.REJOIN_AVAILABLE) &&
+    return [emailStatus.AVAILABLE, emailStatus.RETURNING, emailStatus.REJOIN_NEW].indexOf(emailState.status) > -1 &&
            emailState.checked === emailValue();
   }
 
@@ -1192,9 +1387,16 @@ form.addEventListener("submit", (e) => {
     } else if (st === emailStatus.AVAILABLE) {
       setMsg(emailMsg, 'success', '사용할 수 있는 이메일이에요.'); setFieldError('email', false);
       btnLabel = '확인 완료'; btnOff = true; done = true;
-    } else if (st === emailStatus.REJOIN_AVAILABLE) {
-      // 탈퇴 이력이 있어도 재가입이 허용된 경우: 오류가 아니라 성공(초록·체크)으로 안내
-      setMsg(emailMsg, 'success', '이전에 사용한 이메일이에요. 다시 가입할 수 있어요.'); setFieldError('email', false);
+    } else if (st === emailStatus.RETURNING || st === emailStatus.REJOIN_NEW) {
+      // 탈퇴한 이메일: 가입은 할 수 있으므로 오류가 아니라 성공(초록·체크)으로 안내하고,
+      // 본인인증한 휴대폰 기준으로 복귀(30일 이내)인지 신규인지 함께 알려 준다
+      var r = emailState.result || {};
+      var text = st === emailStatus.RETURNING
+        ? '탈퇴한 이메일이에요. 탈퇴 후 30일이 지나지 않아 기존 회원으로 복귀해요.' + (r.daysLeft ? ' (복귀 가능 ' + r.daysLeft + '일 남음)' : '')
+        : r.reason === 'expired'
+          ? '탈퇴한 이메일이에요. 탈퇴 후 30일이 지나 신규 회원으로 가입해요.'
+          : '탈퇴한 이메일이에요. 신규 회원으로 가입해요.';
+      setMsg(emailMsg, 'success', text); setFieldError('email', false);
       btnLabel = '확인 완료'; btnOff = true; done = true;
     } else if (st === emailStatus.UNAVAILABLE) {
       setMsg(emailMsg, 'error', '현재 이 이메일로 가입할 수 없어요. 다른 이메일을 사용해 주세요.'); setFieldError('email', true);
@@ -1263,9 +1465,11 @@ form.addEventListener("submit", (e) => {
     var email = emailValue(), token = ++emailState.token;
     emailState.status = emailStatus.CHECKING; emailState.failed = false;
     renderEmail(); updateSubmit();
-    config.checkEmail(email).then(function (result) {
+    config.checkEmail(email, $('siPhone').value).then(function (result) {
       if (token !== emailState.token) return;      // 확인하는 사이 이메일을 고쳤으면 결과 무시
-      emailState.status = emailStatus[String(result).toUpperCase()] || emailStatus.AVAILABLE;
+      result = result || {};
+      emailState.status = emailStatus[String(result.status).toUpperCase()] || emailStatus.AVAILABLE;
+      emailState.result = result;
       emailState.checked = email;
       renderEmail(); updateSubmit();
     }, function () {
@@ -1356,8 +1560,11 @@ form.addEventListener("submit", (e) => {
 
   /* ---------- 다음 버튼 ---------- */
   function isComplete() {
-    return state.idChecked && state.checkedId === idInput.value &&
-      pwValid(pw.value) && pw.value === pw2.value &&
+    // 간편가입은 아이디·비밀번호를 만들지 않는다
+    var account = state.social ||
+      (state.idChecked && state.checkedId === idInput.value && pwValid(pw.value) && pw.value === pw2.value);
+    return !!account &&
+      !!state.checkedNick && state.checkedNick === nickValue() &&
       !!$('siName').value && !!$('siPhone').value &&
       emailOk();
     // 자택주소는 선택 항목이라 비워도 넘어갈 수 있음
@@ -1365,9 +1572,10 @@ form.addEventListener("submit", (e) => {
   function updateSubmit() { $('siSubmit').disabled = !isComplete(); }
 
   function collect() {
-    return {
-      userId: idInput.value,
-      password: pw.value,
+    var account = state.social ? { socialTicket: state.social.ticket }
+                               : { userId: idInput.value, password: pw.value };
+    return Object.assign(account, {
+      nickname: nickValue(),
       name: $('siName').value,
       phone: $('siPhone').value,
       email: emailValue(),
@@ -1377,7 +1585,32 @@ form.addEventListener("submit", (e) => {
         address1: addr1.value,
         address2: addr2.value.trim()
       } : null
-    };
+    });
+  }
+
+  /* ---------- 간편가입 ---------- */
+  // 제공자에서 받은 이메일·닉네임을 채우고, 아이디·비밀번호 칸은 숨긴다 (null 이면 일반 가입으로 되돌림)
+  function setSocial(s) {
+    state.social = s || null;
+    ['userId', 'password', 'passwordConfirm'].forEach(function (f) {
+      form.querySelector('[data-field="' + f + '"]').hidden = !!s;
+    });
+    var box = $('siSocial');
+    box.hidden = !s;
+    if (s) {
+      box.textContent = s.providerName + ' 계정으로 가입해요. 아이디와 비밀번호는 만들지 않아요.';
+      if (s.nickname && !nickValue()) {
+        nickInput.value = s.nickname.replace(/[^가-힣A-Za-z0-9]/g, '').slice(0, 10);
+        nickInput.dispatchEvent(new Event('input'));
+      }
+      if (s.email && !emailId.value) {
+        // 이메일을 통째로 넣으면 아이디·도메인으로 자동 분리된다
+        emailId.value = s.email;
+        emailId.dispatchEvent(new Event('input'));
+        if (emailValid()) emailBtn.click();
+      }
+    }
+    updateSubmit();
   }
 
   form.addEventListener('submit', function (e) {
@@ -1391,7 +1624,10 @@ form.addEventListener("submit", (e) => {
     try { sessionStorage.setItem('shin_signup_info', JSON.stringify(safe)); } catch (err) {}
 
     // 다른 사람이 만든 화면(약관 동의 등)은 이 이벤트를 받아서 이어가면 된다
-    document.dispatchEvent(new CustomEvent('shin:info-complete', { detail: data }));
+    // emailCheck: 복귀/신규 안내용 (서버 없이 열었을 때 완료 화면 문구에 쓴다. 서버는 가입 때 다시 계산)
+    document.dispatchEvent(new CustomEvent('shin:info-complete', {
+      detail: Object.assign({}, data, { emailCheck: emailState.result })
+    }));
     if (window.parent !== window) {
       window.parent.postMessage({ type: 'shin:info-complete', data: safe }, '*');
     }
@@ -1410,7 +1646,8 @@ form.addEventListener("submit", (e) => {
     config: config,
     setVerified: setVerified,
     getData: collect,
-    isComplete: isComplete
+    isComplete: isComplete,
+    setSocial: setSocial
   };
 
   validatePw();
@@ -1448,7 +1685,7 @@ function render(){
   $("#mkSum").innerHTML=[["신세계포인트",state.mk.point],["신세계면세점",state.mk.duty]].map(([l,o])=>{const {y,n}=names(o);return `<div class="li" style="padding:4px 0"><span><b>${l}</b><small>${y.length?'동의 '+y.join('·'):'미동의'}${y.length&&n.length?' / 미동의 '+n.join('·'):''}</small></span></div>`}).join("");
   const left=3-vals(state.req).filter(Boolean).length;
   $("#submit").disabled=left>0;
-  $("#submit").textContent=left>0?`필수 동의 ${left}개 남았어요`:"동의하고 가입하기";
+  $("#submit").textContent=left>0?`필수 동의 ${left}개 남았어요`:signupResult?"변경 내용 저장":"동의하고 가입하기";
 }
 function setAll(v){Object.keys(state.req).forEach(k=>state.req[k]=v);Object.keys(state.svc).forEach(k=>state.svc[k]=v);CH.forEach(c=>{state.mk.point[c]=v;state.mk.duty[c]=v});state.mk.night=v}
 
@@ -1467,12 +1704,81 @@ document.addEventListener("click",e=>{
   render();
 });
 
-$("#submit").addEventListener("click",()=>{
+// ===== 추천인 (선택) =====
+const ref={input:$("#refInput"),btn:$("#refBtn"),msg:$("#refMsg"),box:$("#refBox"),checked:""};
+const REF_RE=/^(?=.*[a-z])[a-z0-9]{6,20}$/, REF_INFO="추천해 준 회원이 있으면 아이디를 입력해 주세요.";
+function refMsg(type,text){ref.msg.className="ref-msg"+(type?" "+type:"");ref.msg.textContent=text;ref.box.classList.toggle("is-error",type==="err")}
+// 서버 없이 열었을 때는 friend1234 만 있는 회원으로 본다
+const checkReferrer=id=>SignupAPI.ready.then(on=>on
+  ?SignupAPI.call("/api/users/check-referrer?userId="+encodeURIComponent(id)).then(d=>d.exists)
+  :new Promise(r=>setTimeout(()=>r(id==="friend1234"),300)));
+// 비어 있거나 확인을 마쳤으면 true. 가입 버튼을 누를 때 확인 안 한 값이 있으면 여기서 확인한다
+async function verifyReferrer(){
+  const v=ref.input.value;
+  if(!v||ref.checked===v)return true;
+  if(!REF_RE.test(v)){refMsg("err","추천인 아이디를 확인해 주세요.");return false}
+  if(signupInfo&&v===signupInfo.userId){refMsg("err","본인 아이디는 추천인으로 입력할 수 없어요.");return false}
+  ref.btn.disabled=true;ref.btn.textContent="확인 중";
+  try{
+    const ok=await checkReferrer(v);
+    if(ref.input.value!==v)return false; // 확인 중에 값이 바뀜
+    ref.checked=ok?v:"";
+    ok?refMsg("ok","추천인을 확인했어요."):refMsg("err","추천인 아이디를 찾을 수 없어요. 다시 확인해 주세요.");
+    return ok;
+  }catch(e){refMsg("err","잠시 후 다시 시도해 주세요.");return false}
+  finally{ref.btn.textContent="확인";ref.btn.disabled=ref.input.readOnly||!ref.input.value||ref.checked===ref.input.value}
+}
+ref.input.addEventListener("input",()=>{
+  const c=ref.input.value.toLowerCase().replace(/[^a-z0-9]/g,"");
+  if(c!==ref.input.value)ref.input.value=c;
+  if(ref.checked!==c)ref.checked="";
+  ref.btn.disabled=!c;refMsg("",c?"확인을 눌러 주세요.":REF_INFO);
+});
+ref.input.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();if(!ref.btn.disabled)ref.btn.click()}});
+ref.btn.addEventListener("click",verifyReferrer);
+// 추천인은 가입할 때만 넣는다. 가입 후 "동의 내용 수정"으로 돌아오면 고칠 수 없게 잠근다
+function lockReferrer(){
+  ref.input.readOnly=true;ref.btn.disabled=true;
+  if(ref.input.value)refMsg("","추천인은 가입할 때만 입력할 수 있어요.");else ref.box.hidden=true;
+}
+document.addEventListener("shin:consent-open",()=>{
+  if(!ref.input.readOnly)return; // 가입 전이면 입력한 값을 그대로 둔다
+  ref.input.readOnly=false;ref.box.hidden=false;ref.input.value="";ref.checked="";ref.btn.disabled=true;refMsg("",REF_INFO);
+});
+
+$("#submit").addEventListener("click",async()=>{
+  const btn=$("#submit");
+  if(!signupResult&&!(await verifyReferrer())){ref.input.focus();return}
+  if(await SignupAPI.ready){
+    if(!signupInfo){showToast("정보입력부터 진행해 주세요.");go("info");return}
+    const consents={required:state.req,services:state.svc,marketing:state.mk};
+    btn.disabled=true;btn.textContent=signupResult?"저장 중":"가입 처리 중";
+    try{
+      if(signupResult) await SignupAPI.call("/api/consents",{consentToken:signupResult.consentToken,consents});
+      else{
+        const {memberHint,...info}=signupInfo;
+        signupResult=await SignupAPI.call("/api/signup",{...info,referrer:ref.input.value||null,consents});
+        signupInfo={...signupInfo,password:undefined}; // 가입 후에는 비밀번호를 들고 있지 않는다
+      }
+    }catch(err){
+      render();showToast(err.message);
+      if(err.code==="social_ticket_invalid"||err.code==="social_already_linked"){setTimeout(()=>{socialSignup=null;ShinInfo.setSocial(null);go("entry")},1200);return}
+      if(String(err.code).startsWith("referrer")){ref.checked="";refMsg("err",err.message);ref.input.focus();return}
+      if(["id_taken","nickname_taken","email_unavailable","invalid_input"].includes(err.code))setTimeout(()=>go("info"),1200);
+      return;
+    }
+  }else if(!signupResult){
+    signupResult={memberType:(signupInfo&&signupInfo.memberHint)||"new"}; // 서버 없이 연 경우
+  }
+  renderDoneHero(signupResult.memberType,signupResult.firstJoinedAt);
+  $("#doneRef").textContent=ref.input.value||"입력하지 않았어요";
+  lockReferrer();
   const d=new Date();$("#doneDate").textContent=`${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일`;
   const sc=vals(state.svc).filter(Boolean).length,p=names(state.mk.point),f=names(state.mk.duty);
   const item=(label,sub,y)=>`<div class="li"><span>${label}${sub?`<small>${sub}</small>`:""}</span>${badge(y)}</div>`;
   const mk=x=>x.y.length?`동의 ${x.y.join("·")}`+(x.n.length?` / 미동의 ${x.n.join("·")}`:""):"전체 미동의";
   $("#doneList").innerHTML=item("필수 약관 3건","이용약관 · 개인정보 · 만 14세",true)+item("통합 ID 서비스",`${sc}/9 이용`,sc>0)+item("신세계포인트 마케팅",mk(p),p.y.length>0)+item("신세계면세점 마케팅",mk(f),f.y.length>0)+item("야간 마케팅","21~08시",state.mk.night);
+  render(); // "가입 처리 중"으로 잠근 버튼을 풀어야 "동의 내용 수정"에서 다시 저장할 수 있다
   go("done");
 });
 $("#edit").addEventListener("click",()=>go("consent"));
