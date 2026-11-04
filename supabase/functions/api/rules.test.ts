@@ -25,6 +25,7 @@ test("가입 입력 정리", () => {
   const d = validateSignup(base);
   assert.equal(d.email, "test@example.com");
   assert.equal(d.phone, "010-1234-5678");
+  assert.equal(validateSignup({ ...base, nickname: undefined }).nickname, null); // 닉네임 없이도 가입 입력이 통과한다
 });
 
 test("가입 입력 거절", () => {

@@ -57,8 +57,9 @@ function validateSignup(body: Json) {
   if (typeof userId !== "string" || !ID_RE.test(userId)) throw badRequest(ID_RULE_MSG);
   if (!passwordOk(body.password)) throw badRequest("비밀번호 규칙을 확인해 주세요.");
 
+  // 닉네임은 선택: 보낸 경우에만 규칙을 확인한다 (After 화면은 보내지 않는다)
   const nickname = body.nickname ?? "";
-  if (typeof nickname !== "string" || !NICK_RE.test(nickname.trim())) throw badRequest(NICK_RULE_MSG);
+  if (nickname !== "" && (typeof nickname !== "string" || !NICK_RE.test(nickname.trim()))) throw badRequest(NICK_RULE_MSG);
   const name = body.name ?? "";
   if (typeof name !== "string" || name.trim().length < 1 || name.trim().length > 30) throw badRequest("이름을 확인해 주세요.");
   const phone = body.phone ?? "";
@@ -91,7 +92,7 @@ function validateSignup(body: Json) {
   }
 
   return {
-    userId, password: body.password as string, nickname: nickname.trim(), name: name.trim(),
+    userId, password: body.password as string, nickname: nickname ? nickname.trim() : null, name: name.trim(),
     phone: normalizePhone(phone.trim()), email: normalizeEmail(email), address, referrer,
   };
 }
@@ -229,7 +230,7 @@ async function signup(body: Record<string, unknown>) {
     throw dbError(error);
   }
   return {
-    ok: true, userId: data.userId, nickname: data.nickname, consentToken: token,
+    ok: true, userId: data.userId, nickname: data.nickname ?? null, consentToken: token,
     memberType: result.memberType, firstJoinedAt: result.firstJoinedAt, socialProvider: null,
   };
 }

@@ -260,10 +260,6 @@ h1 .nm{font-style:normal;color:var(--blue)}
         <button class="eye" type="button" data-eye="f-pw2" aria-label="비밀번호 확인 보기">보기</button></div>
         <p class="msg" id="m-pw2" aria-live="polite"></p></div>
 
-      <div class="field"><label class="l" for="f-nick">닉네임<em class="rq">*</em></label>
-        <div class="row"><input class="input" id="f-nick" autocomplete="nickname" placeholder="한글·영문·숫자 2~10자" aria-describedby="m-nick">
-        <button class="chk" id="b-nick" type="button" disabled>중복확인</button></div>
-        <p class="msg" id="m-nick" aria-live="polite"></p></div>
 
       <div class="band"></div>
       <h2 class="g-title">추가 정보 <span class="tag">선택</span></h2>
@@ -325,7 +321,6 @@ h1 .nm{font-style:normal;color:var(--blue)}
     <div class="done-head"><div class="done-ico" aria-hidden="true">✓</div>
       <h1 id="done-title"></h1><p class="lead" id="done-sub"></p></div>
     <dl class="kv">
-      <div><dt>닉네임</dt><dd id="d-nick"></dd></div>
       <div><dt>휴대폰</dt><dd id="d-phone"></dd></div>
       <div><dt>이메일</dt><dd id="d-email"></dd></div>
       <div><dt>가입일</dt><dd id="d-date"></dd></div>
@@ -388,7 +383,6 @@ const wait=(ms,v)=>new Promise(r=>setTimeout(()=>r(v),ms));
    이메일: rejoin* → 30일 이내 복귀, old* → 30일 지나 신규, blocked* → 가입 제한, 그 외 → 신규 */
 const mock={
   id:id=>wait(300,!["admin","shinsegae","test1234","gudals4360","friend1234"].includes(id)),
-  nick:n=>wait(300,!["관리자","운영자","admin","신세계","친구"].includes(n.toLowerCase())),
   ref:id=>wait(300,id==="friend1234"),
   email:e=>{const id=e.split("@")[0];return wait(700,
     id.startsWith("rejoin")?{status:"returning",daysLeft:20,firstJoinedAt:"2024-03-15T00:00:00Z"}
@@ -397,7 +391,6 @@ const mock={
 };
 const api={
   id:async v=>(await API.ready)?(await API.call("/api/users/check-id?userId="+encodeURIComponent(v))).available:mock.id(v),
-  nick:async v=>(await API.ready)?(await API.call("/api/users/check-nickname?nickname="+encodeURIComponent(v))).available:mock.nick(v),
   ref:async v=>(await API.ready)?(await API.call("/api/users/check-referrer?userId="+encodeURIComponent(v))).exists:mock.ref(v),
   email:async(v,phone)=>(await API.ready)?API.call("/api/email/check",{email:v,phone}):mock.email(v)
 };
@@ -428,7 +421,7 @@ const mask={
 function fillVerified(){const v=S.verified||DEMO;$("#f-name").value=v.name;$("#f-phone").value=v.phone;check()}
 
 /* ===== 3. 정보 입력 ===== */
-const RE={id:/^(?=.*[a-z])[a-z0-9]{6,20}$/,nick:/^[가-힣A-Za-z0-9]{2,10}$/,email:/^[a-z0-9._%+-]+@[a-z0-9-]+(\.[a-z0-9-]+)+$/,ref:/^(?=.*[a-z])[a-z0-9]{6,20}$/};
+const RE={id:/^(?=.*[a-z])[a-z0-9]{6,20}$/,email:/^[a-z0-9._%+-]+@[a-z0-9-]+(\.[a-z0-9-]+)+$/,ref:/^(?=.*[a-z])[a-z0-9]{6,20}$/};
 const ICON={ok:"✓",err:"!",info:"",wait:"…"};
 function setMsg(el,kind,text){el.className="msg"+(kind==="ok"||kind==="err"?" "+kind:"");el.textContent=text?(ICON[kind]?ICON[kind]+" ":"")+text:""}
 
@@ -491,11 +484,6 @@ const uid=checker({
   normalize:v=>v.toLowerCase().replace(/[^a-z0-9]/g,""),onChange:()=>check(),
   run:async v=>(await api.id(v))?{ok:true,kind:"ok",text:"사용할 수 있는 아이디예요."}:{ok:false,kind:"err",text:"이미 사용 중인 아이디예요."}
 });
-const nick=checker({
-  input:$("#f-nick"),btn:$("#b-nick"),msg:$("#m-nick"),hint:"한글·영문·숫자 2~10자로 입력해 주세요.",test:v=>RE.nick.test(v),
-  badMsg:"한글, 영문, 숫자 2~10자로 입력해 주세요.",normalize:v=>v.replace(/[^가-힣A-Za-z0-9]/g,""),onChange:()=>check(),
-  run:async v=>(await api.nick(v))?{ok:true,kind:"ok",text:"사용할 수 있는 닉네임이에요."}:{ok:false,kind:"err",text:"이미 사용 중인 닉네임이에요."}
-});
 
 /* 비밀번호 */
 const PW=["len","lower","upper","num","sym","sp"];
@@ -538,7 +526,6 @@ function missing(){
   if(!(uid.checked&&uid.checked===$("#f-id").value))m.push("아이디 중복확인");
   if(!pwOk($("#f-pw").value))m.push("비밀번호 규칙");
   else if($("#f-pw").value!==$("#f-pw2").value)m.push("비밀번호 확인");
-  if(!(nick.checked&&nick.checked===$("#f-nick").value))m.push("닉네임 중복확인");
   if(!addrOk())m.push("주소(우편번호 5자리·기본 주소)");
   return m;
 }
@@ -550,7 +537,7 @@ function check(){
 $("#info-next").addEventListener("click",()=>{
   if(missing().length)return;
   const v=S.verified||DEMO,r=email.result;
-  S.info={userId:$("#f-id").value,password:$("#f-pw").value,nickname:$("#f-nick").value,name:v.name,phone:v.phone,
+  S.info={userId:$("#f-id").value,password:$("#f-pw").value,name:v.name,phone:v.phone,
     email:$("#f-email").value,address:addrOf(),memberHint:r&&r.status==="returning"?"returning":"new"};
   go("consent");renderConsent();
 });
@@ -625,7 +612,7 @@ $("#submit").addEventListener("click",async()=>{
     }catch(err){
       btn.textContent="가입하기";renderConsent();toast(err.message);
       if(String(err.code).startsWith("referrer")){ref.reset();setMsg($("#m-ref"),"err",err.message);return}
-      if(["id_taken","nickname_taken","email_unavailable","invalid_input"].includes(err.code))setTimeout(()=>go("info"),1200);
+      if(["id_taken","email_unavailable","invalid_input"].includes(err.code))setTimeout(()=>go("info"),1200);
       return;
     }
   }else if(!S.result)S.result={memberType:(S.info&&S.info.memberHint)||"new"}; // 서버 없이 연 경우
@@ -636,10 +623,10 @@ $("#submit").addEventListener("click",async()=>{
 /* ===== 5. 완료 ===== */
 const fmtDate=d=>`${d.getFullYear()}. ${d.getMonth()+1}. ${d.getDate()}.`;
 function renderDone(){
-  const i=S.info||{name:DEMO.name,phone:DEMO.phone,email:"demo@example.com",nickname:"-"},back=S.result.memberType==="returning",n=mask.name(i.name);
+  const i=S.info||{name:DEMO.name,phone:DEMO.phone,email:"demo@example.com"},back=S.result.memberType==="returning",n=mask.name(i.name);
   $("#done-title").innerHTML=back?`<em class="nm">${n}</em> 님,<br>다시 오신 걸 환영해요`:`<em class="nm">${n}</em> 님,<br>가입이 완료됐어요`;
   $("#done-sub").textContent=back?(S.result.firstJoinedAt?`탈퇴 전 가입일(${fmtDate(new Date(S.result.firstJoinedAt))})을 이어서 기존 회원으로 돌아왔어요.`:"기존 회원으로 돌아왔어요."):"동의 내용은 아래에서 확인하고 바꿀 수 있어요.";
-  $("#d-nick").textContent=i.nickname;$("#d-phone").textContent=mask.phone(i.phone);$("#d-email").textContent=mask.email(i.email);
+  $("#d-phone").textContent=mask.phone(i.phone);$("#d-email").textContent=mask.email(i.email);
   $("#d-date").textContent=fmtDate(new Date());$("#d-ref").textContent=$("#f-ref").value||"입력하지 않았어요";
   const sc=vals(C.svc).filter(Boolean).length,names=g=>({y:CHANNELS.filter(c=>C.mk[g][c]),n:CHANNELS.filter(c=>!C.mk[g][c])});
   const mk=x=>x.y.length?`동의 ${x.y.join("·")}`+(x.n.length?` / 미동의 ${x.n.join("·")}`:""):"전체 미동의";

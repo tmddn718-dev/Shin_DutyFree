@@ -113,7 +113,7 @@ async function signup(body: Record<string, unknown>) {
     throw dbError(error);
   }
   return {
-    ok: true, userId: data.userId, nickname: data.nickname, consentToken: token,
+    ok: true, userId: data.userId, nickname: data.nickname ?? null, consentToken: token,
     memberType: result.memberType, firstJoinedAt: result.firstJoinedAt, socialProvider: null,
   };
 }

@@ -1,7 +1,7 @@
 -- 시연용 데이터. 로컬(supabase db reset)이나 데모 프로젝트에서만 쓰고, 실서비스에는 넣지 않는다.
 -- 날짜가 실행 시점 기준이라, 30일 복귀 시연이 필요하면 이 파일을 다시 실행한다.
-insert into public.members (user_id, email, name, phone, nickname)
-values ('friend1234', 'friend@example.com', '친구', '010-9876-5432', '친구')
+insert into public.members (user_id, email, name, phone)
+values ('friend1234', 'friend@example.com', '친구', '010-9876-5432')
 on conflict do nothing;
 
 insert into public.email_history (email, status, phone, withdrawn_at, prev_joined_at) values
